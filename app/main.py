@@ -12,6 +12,8 @@ load_dotenv()
 app = FastAPI()
 app.include_router(auth.router)
 
+
+# For testing auth purposes
 @app.get("/protected")
 def protected_route(user=Depends(verify_token)):
     return {"message": f"Hello {user['email']}, you are authenticated!"}

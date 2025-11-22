@@ -7,21 +7,25 @@ from app.core.supabase_client import supabase
 load_dotenv()
 
 security = HTTPBearer()
-JWT_SIGN_KEY = os.getenv("SUPABASE_JWT_SECRET")  
+JWT_SIGN_KEY = os.getenv("JWT_SIGN_KEY")
+
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
+
     try:
         payload = jwt.decode(
             token,
             JWT_SIGN_KEY,
             algorithms=["HS256"],
             issuer=f"{os.getenv('PUBLIC_SUPABASE_URL')}/auth/v1",
-            options={"verify_aud": False},  # Supabase uses "authenticated" audience
+            options={"verify_aud": False},
         )
         return payload
+
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
+
     except jwt.InvalidTokenError as e:
         print("JWT verification failed:", e)
         raise HTTPException(status_code=401, detail="Invalid token")
