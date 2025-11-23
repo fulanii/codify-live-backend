@@ -43,3 +43,26 @@ class UserRegistrationModel(BaseModel):
             )
 
         return password
+
+
+class UserLoginModel(BaseModel):
+    email: str
+    password: SecretStr
+
+
+# Response
+class UserRegistrationResponseModel(BaseModel):
+    id: str
+    email: str
+    username: str
+
+
+class UserLoginResponseModel(BaseModel):
+    access_token: str
+    expires_in: int
+    user_id: str
+    email: str
+
+
+class AccessTokenResponseModel(BaseModel):
+    access_token: str

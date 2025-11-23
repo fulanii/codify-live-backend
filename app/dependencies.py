@@ -7,7 +7,7 @@ from app.core.supabase_client import supabase
 load_dotenv()
 
 security = HTTPBearer()
-JWT_SIGN_KEY = os.getenv("JWT_SIGN_KEY")
+JWT_SIGN_KEY = os.getenv("SUPABASE_JWT_SECRET")
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
