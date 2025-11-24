@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from typing import Union
 
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import auth
 from .dependencies import verify_token
@@ -11,6 +12,19 @@ load_dotenv()
 
 app = FastAPI()
 app.include_router(auth.router)
+
+# TODO: update origins for prod
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # For testing auth purposes
