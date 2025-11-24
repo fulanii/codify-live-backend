@@ -6,7 +6,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import auth
-from .dependencies import verify_token
+from .core.dependencies import verify_token
 
 load_dotenv()
 
