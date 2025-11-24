@@ -7,8 +7,8 @@ from fastapi import APIRouter, status, HTTPException, Request, Response
 from supabase import AuthApiError
 
 from app.core.supabase_client import supabase
-from app.utils.utils import env_bool, env_none_or_str
-from app.models.auth_models import (
+from app.utils.env_helper import env_bool, env_none_or_str
+from .schemas import (
     UserRegistrationModel,
     UserRegistrationResponseModel,
     UserLoginModel,
@@ -18,7 +18,7 @@ from app.models.auth_models import (
 
 
 load_dotenv()
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter()
 
 
 @router.post("/register", response_model=UserRegistrationResponseModel, status_code=201)

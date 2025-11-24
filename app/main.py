@@ -5,13 +5,13 @@ from typing import Union
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth
+from .auth import routers as auth_router
 from .core.dependencies import verify_token
 
 load_dotenv()
 
 app = FastAPI()
-app.include_router(auth.router)
+app.include_router(auth_router.router, prefix="/auth", tags=["Authentication"])
 
 # TODO: update origins for prod
 origins = [
