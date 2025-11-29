@@ -1,5 +1,12 @@
-from pydantic import BaseModel, SecretStr, field_validator
 import re
+from pydantic import BaseModel, SecretStr, field_validator
+from typing import List, Optional
+from datetime import datetime
+
+
+"""
+auth/register
+"""
 
 
 class UserRegistrationModel(BaseModel):
@@ -45,16 +52,20 @@ class UserRegistrationModel(BaseModel):
         return password
 
 
-class UserLoginModel(BaseModel):
-    email: str
-    password: SecretStr
-
-
-# Response
 class UserRegistrationResponseModel(BaseModel):
     id: str
     email: str
     username: str
+
+
+"""
+auth/login
+"""
+
+
+class UserLoginModel(BaseModel):
+    email: str
+    password: SecretStr
 
 
 class UserLoginResponseModel(BaseModel):
@@ -64,5 +75,55 @@ class UserLoginResponseModel(BaseModel):
     email: str
 
 
+"""
+auth/access
+"""
+
+
 class AccessTokenResponseModel(BaseModel):
     access_token: str
+
+
+"""
+auth/me
+"""
+
+
+class AuthInfo(BaseModel):
+    id: str
+    email: str
+
+
+class ProfileInfo(BaseModel):
+    username: str
+    created_at: datetime
+
+
+class FriendItem(BaseModel):
+    friend_id: str
+    username: Optional[str]
+    created_at: datetime
+
+
+class IncomingRequestItem(BaseModel):
+    id: str
+    sender_id: str
+    username: Optional[str]
+    status: str
+    created_at: datetime
+
+
+class OutgoingRequestItem(BaseModel):
+    id: str
+    receiver_id: str
+    username: Optional[str]
+    status: str
+    created_at: datetime
+
+
+class MeResponseModel(BaseModel):
+    auth: AuthInfo
+    profile: ProfileInfo
+    friends: List[FriendItem]
+    incoming_requests: List[IncomingRequestItem]
+    outgoing_requests: List[OutgoingRequestItem]

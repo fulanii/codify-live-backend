@@ -16,11 +16,13 @@ from .schemas import (
     UserLoginModel,
     UserLoginResponseModel,
     AccessTokenResponseModel,
+    MeResponseModel,
 )
 
 
 load_dotenv()
 router = APIRouter()
+security = HTTPBearer()
 
 
 @router.post("/register", response_model=UserRegistrationResponseModel, status_code=201)
@@ -220,16 +222,11 @@ def get_new_access(request: Request, response: Response):
         )
 
 
-# TODO: Implement Password reset
-
-
-# TODO: Implement Email change
-
-
-@router.get("/me", status_code=200)
+@router.get("/me", response_model=MeResponseModel, status_code=200)
 def get_me(
     request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(verify_token)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    user=Depends(verify_token),
 ):
     """
     Get full authenticated user profile including auth info, profile,
@@ -250,7 +247,6 @@ def get_me(
     - `500`: Database or server error
     """
     try:
-        print(credentials)
         # --- 1. Get authenticated user from Supabase ---
         token = credentials.credentials
         user_data = supabase.auth.get_user(jwt=token)
@@ -347,7 +343,11 @@ def get_me(
         incoming_requests_output = []
         for r in incoming_requests:
             username = next(
-                (u["username"] for u in incoming_usernames if u["id"] == r["sender_id"]),
+                (
+                    u["username"]
+                    for u in incoming_usernames
+                    if u["id"] == r["sender_id"]
+                ),
                 None,
             )
 
@@ -385,7 +385,11 @@ def get_me(
         outgoing_requests_output = []
         for r in outgoing_requests:
             username = next(
-                (u["username"] for u in outgoing_usernames if u["id"] == r["receiver_id"]),
+                (
+                    u["username"]
+                    for u in outgoing_usernames
+                    if u["id"] == r["receiver_id"]
+                ),
                 None,
             )
 
@@ -414,3 +418,9 @@ def get_me(
     except Exception as e:
         print("Error in /auth/me:", e)
         raise HTTPException(500, detail=f"Internal server error: {e}")
+
+
+# TODO: Implement Password reset
+
+
+# TODO: Implement Email change
