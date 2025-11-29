@@ -2,12 +2,14 @@ import os
 import httpx
 from dotenv import load_dotenv
 
-from fastapi import APIRouter, status, HTTPException, Request, Response
+from fastapi import APIRouter, status, HTTPException, Request, Response, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from supabase import AuthApiError
 
 from app.core.supabase_client import supabase
 from app.utils.env_helper import env_bool, env_none_or_str
+from app.core.dependencies import verify_token
 from .schemas import (
     UserRegistrationModel,
     UserRegistrationResponseModel,
@@ -222,3 +224,193 @@ def get_new_access(request: Request, response: Response):
 
 
 # TODO: Implement Email change
+
+
+@router.get("/me", status_code=200)
+def get_me(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(verify_token)
+):
+    """
+    Get full authenticated user profile including auth info, profile,
+    friendships, and friendship requests.
+
+    This endpoint returns everything related to the logged-in user:
+
+    **Returns**
+    - `auth`: user's id & email (from `auth.users`)
+    - `profile`: username & created_at (from `profiles`)
+    - `friends`: list of accepted friends with usernames
+    - `incoming_requests`: users who sent YOU a request
+    - `outgoing_requests`: users YOU sent a request to
+
+    **Errors**
+    - `401`: Invalid or expired token
+    - `404`: Profile not found
+    - `500`: Database or server error
+    """
+    try:
+        print(credentials)
+        # --- 1. Get authenticated user from Supabase ---
+        token = credentials.credentials
+        user_data = supabase.auth.get_user(jwt=token)
+
+        if not user_data or not user_data.user:
+            raise HTTPException(401, "Invalid authentication token.")
+
+        user_id = user_data.user.id
+        user_email = user_data.user.email
+
+        # --- 2. Fetch profile ---
+        profile_query = (
+            supabase.table("profiles")
+            .select("username, created_at")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+
+        if not profile_query.data:
+            raise HTTPException(404, "Profile not found.")
+
+        profile = profile_query.data
+
+        # --- 3. Fetch friendships ---
+        # Need to find all rows where user1_id = me OR user2_id = me
+        friends_query = (
+            supabase.table("friendships")
+            .select("user1_id, user2_id, created_at")
+            .or_(f"user1_id.eq.{user_id},user2_id.eq.{user_id}")
+            .execute()
+        )
+
+        friends_rows = friends_query.data or []
+
+        # Resolve friend's ID (the "other" user)
+        friend_ids = [
+            row["user2_id"] if row["user1_id"] == user_id else row["user1_id"]
+            for row in friends_rows
+        ]
+
+        # Fetch usernames of all friends
+        friends_usernames = []
+        if friend_ids:
+            friends_usernames_result = (
+                supabase.table("profiles")
+                .select("id, username")
+                .in_("id", friend_ids)
+                .execute()
+            )
+            friends_usernames = friends_usernames_result.data
+
+        # Attach username to friend record
+        friends_output = []
+        for row in friends_rows:
+            friend_id = (
+                row["user2_id"] if row["user1_id"] == user_id else row["user1_id"]
+            )
+
+            username = next(
+                (u["username"] for u in friends_usernames if u["id"] == friend_id),
+                None,
+            )
+
+            friends_output.append(
+                {
+                    "friend_id": friend_id,
+                    "username": username,
+                    "created_at": row["created_at"],
+                }
+            )
+
+        # --- 4. Incoming friend requests (others → me) ---
+        incoming_requests = (
+            supabase.table("friendships_requests")
+            .select("id, sender_id, status, created_at")
+            .eq("receiver_id", user_id)
+            .eq("status", "Pending")
+            .execute()
+        ).data or []
+
+        # Resolve usernames for incoming senders
+        incoming_sender_ids = [r["sender_id"] for r in incoming_requests]
+        incoming_usernames = []
+        if incoming_sender_ids:
+            incoming_usernames = (
+                supabase.table("profiles")
+                .select("id, username")
+                .in_("id", incoming_sender_ids)
+                .execute()
+            ).data
+
+        # Attach username
+        incoming_requests_output = []
+        for r in incoming_requests:
+            username = next(
+                (u["username"] for u in incoming_usernames if u["id"] == r["sender_id"]),
+                None,
+            )
+
+            incoming_requests_output.append(
+                {
+                    "id": r["id"],
+                    "sender_id": r["sender_id"],
+                    "username": username,
+                    "status": r["status"],
+                    "created_at": r["created_at"],
+                }
+            )
+
+        # --- 5. Outgoing friend requests (me → others) ---
+        outgoing_requests = (
+            supabase.table("friendships_requests")
+            .select("id, receiver_id, status, created_at")
+            .eq("sender_id", user_id)
+            .eq("status", "Pending")
+            .execute()
+        ).data or []
+
+        # Resolve usernames
+        outgoing_receiver_ids = [r["receiver_id"] for r in outgoing_requests]
+        outgoing_usernames = []
+        if outgoing_receiver_ids:
+            outgoing_usernames = (
+                supabase.table("profiles")
+                .select("id, username")
+                .in_("id", outgoing_receiver_ids)
+                .execute()
+            ).data
+
+        # Attach username
+        outgoing_requests_output = []
+        for r in outgoing_requests:
+            username = next(
+                (u["username"] for u in outgoing_usernames if u["id"] == r["receiver_id"]),
+                None,
+            )
+
+            outgoing_requests_output.append(
+                {
+                    "id": r["id"],
+                    "receiver_id": r["receiver_id"],
+                    "username": username,
+                    "status": r["status"],
+                    "created_at": r["created_at"],
+                }
+            )
+
+        # --- FINAL RESPONSE ---
+        return {
+            "auth": {
+                "id": user_id,
+                "email": user_email,
+            },
+            "profile": profile,
+            "friends": friends_output,
+            "incoming_requests": incoming_requests_output,
+            "outgoing_requests": outgoing_requests_output,
+        }
+
+    except Exception as e:
+        print("Error in /auth/me:", e)
+        raise HTTPException(500, detail=f"Internal server error: {e}")
