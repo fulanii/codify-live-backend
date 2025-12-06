@@ -18,7 +18,7 @@ app.include_router(friend_router.router, prefix="/friends", tags=["Friendship"])
 
 # TODO: update origins for prod
 origins = [
-    "http://localhost:5174",
+    "http://localhost:5173",
 ]
 
 app.add_middleware(

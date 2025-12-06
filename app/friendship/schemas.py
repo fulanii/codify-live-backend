@@ -47,3 +47,18 @@ class AcceptFriendRequestModel(BaseModel):
 class AcceptFriendRequestResponseModel(BaseModel):
     friendship_accept: bool
     details: AcceptFriendRequestDetail
+
+
+# Decline friendship request
+class DeclineFriendshipRequestResponseModel(BaseModel):
+    request_declined: bool
+
+
+# canel sent friend requiest
+class CancelFriendshipRequestResponseModel(BaseModel):
+    request_canceled: bool
+
+
+# remove friend
+class RemoveFriendResponseModel(BaseModel):
+    friend_removed: bool

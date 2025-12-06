@@ -19,6 +19,9 @@ from .schemas import (
     FriendRequestResponseModel,
     AcceptFriendRequestModel,
     AcceptFriendRequestResponseModel,
+    DeclineFriendshipRequestResponseModel,
+    CancelFriendshipRequestResponseModel,
+    RemoveFriendResponseModel,
 )
 
 
@@ -151,11 +154,9 @@ def create_friend_request_using_username(
     try:
         existing_request = (
             supabase.table("friendships_requests")
-            .select("id")
-            .or_(
-                f"sender_id.eq.{sender_id},receiver_id.eq.{receiver_id},"
-                f"sender_id.eq.{receiver_id},receiver_id.eq.{sender_id}"
-            )
+            .select("sender_id, receiver_id")
+            .eq("sender_id", f"{sender_id}")
+            .eq("receiver_id", f"{receiver_id}")
             .execute()
         )
     except Exception as e:
@@ -262,11 +263,12 @@ def accept_friend_request(
         check_friendships_request = (
             supabase.table("friendships_requests")
             .select("sender_id, receiver_id")
-            .eq("sender_id", f"{sender_id}")
-            .eq("receiver_id", f"{receiver_id}")
+            .or_(
+                f"sender_id.eq.{sender_id},receiver_id.eq.{receiver_id},"
+                f"sender_id.eq.{receiver_id},receiver_id.eq.{sender_id}"
+            )
             .execute()
         )
-
         if not check_friendships_request.data:
             raise HTTPException(
                 409,
@@ -282,7 +284,7 @@ def accept_friend_request(
         # if yess update friendships_requests status as accepted (delete 'Declined', 'Cancelled' later w cron job)
         update_result = (
             supabase.table("friendships_requests")
-            .update({"status": "Accepted"})
+            .delete()
             .eq("sender_id", sender_id)
             .eq("receiver_id", receiver_id)
             .execute()
@@ -315,3 +317,205 @@ def accept_friend_request(
         }
     except Exception:
         raise HTTPException(500, detail="Database error while updating friendship.")
+
+
+# Decline Friend Request (only receiver can)
+# Only Receiver can decline
+@router.delete(
+    "/request/decline/{sender_id}",
+    response_model=DeclineFriendshipRequestResponseModel,
+    status_code=200,
+)
+def decline_friend_request(
+    sender_id: str,
+    user=Depends(verify_token),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    """
+    Decline a pending friendship request sent by the specified user.
+
+    Args:
+        sender_id (str):
+            The ID of the user who originally sent the friend request.
+        user:
+            The authenticated user dependency (from verify_token).
+        credentials (HTTPAuthorizationCredentials):
+            Authorization header containing the user's JWT.
+
+    Returns:
+        DeclineFriendshipRequestResponseModel:
+            A response indicating whether the request was successfully declined.
+
+    Raises:
+        HTTPException (404):
+            If no pending friend request exists from the sender to the authenticated user.
+        HTTPException (500):
+            If a database or server error occurs.
+
+    Summary:
+        This endpoint allows the authenticated user (receiver) to decline a friend
+        request sent by `sender_id`. It validates the request, checks that it is
+        still pending, updates its status to "Declined", and returns a simple
+        success response.
+    """
+
+    token = credentials.credentials
+    receiver_data = supabase.auth.get_user(jwt=token)
+    receiver_id = receiver_data.user.id
+
+    # Query only pending requests
+    request_query = (
+        supabase.table("friendships_requests")
+        .select("sender_id, receiver_id, status")
+        .eq("sender_id", sender_id)
+        .eq("receiver_id", receiver_id)
+        .eq("status", "Pending")
+        .execute()
+    )
+
+    if not request_query.data:
+        raise HTTPException(status_code=404, detail="No pending friend request found.")
+
+    (
+        supabase.table("friendships_requests")
+        .delete()
+        .eq("sender_id", sender_id)
+        .eq("receiver_id", receiver_id)
+        .eq("status", "Pending")
+        .execute()
+    )
+
+    return {"request_declined": True}
+
+
+# Cancel Friend Request (Only the sender can cancel.)print()
+@router.delete(
+    "/request/cancel/{receiver_id}",
+    response_model=CancelFriendshipRequestResponseModel,
+    status_code=200,
+)
+def cancel_friend_request(
+    receiver_id: str,
+    user=Depends(verify_token),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    """
+    Cancel a pending friendship request previously sent by the authenticated user.
+
+    Args:
+        receiver_id (str):
+            The ID of the user who received the original friend request.
+        user:
+            The authenticated user dependency (from verify_token).
+        credentials (HTTPAuthorizationCredentials):
+            Authorization header containing the user's JWT.
+
+    Returns:
+        CancelFriendshipRequestResponseModel:
+            A response indicating whether the friend request was successfully canceled.
+
+    Raises:
+        HTTPException (404):
+            If no pending friend request exists between the sender and receiver.
+        HTTPException (500):
+            If a database or server error occurs.
+
+    Summary:
+        This endpoint allows the sender to cancel a friend request that is still in
+        the 'Pending' state. Only the original sender can perform this action.
+    """
+
+    token = credentials.credentials
+    sender_data = supabase.auth.get_user(jwt=token)
+    sender_id = sender_data.user.id
+
+    # Check if the pending request exists
+    request_query = (
+        supabase.table("friendships_requests")
+        .select("sender_id, receiver_id, status")
+        .eq("sender_id", sender_id)
+        .eq("receiver_id", receiver_id)
+        .eq("status", "Pending")
+        .execute()
+    )
+
+    if not request_query.data:
+        raise HTTPException(
+            status_code=404, detail="No pending friend request to cancel."
+        )
+
+    # Delete the pending request
+    (
+        supabase.table("friendships_requests")
+        .delete()
+        .eq("sender_id", sender_id)
+        .eq("receiver_id", receiver_id)
+        .eq("status", "Pending")
+        .execute()
+    )
+
+    return {"request_canceled": True}
+
+
+@router.delete(
+    "/remove/{other_user_id}",
+    response_model=RemoveFriendResponseModel,
+    status_code=200,
+)
+def remove_friend(
+    other_user_id: str,
+    user=Depends(verify_token),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    """
+    Remove an existing friendship between the authenticated user and another user.
+
+    Args:
+        other_user_id (str):
+            The ID of the user to remove from the authenticated user's friend list.
+        user:
+            Authenticated user dependency (verify_token).
+        credentials (HTTPAuthorizationCredentials):
+            Authorization header containing the JWT token.
+
+    Returns:
+        RemoveFriendResponseModel:
+            Indicates whether the friendship was removed successfully.
+
+    Raises:
+        HTTPException (404):
+            If no friendship exists between the users.
+        HTTPException (500):
+            If a database error occurs.
+    """
+
+    # Extract current authenticated user ID
+    token = credentials.credentials
+    auth_user = supabase.auth.get_user(jwt=token)
+    current_user_id = auth_user.user.id
+
+    # Canonical ordering (must match SQL CHECK constraint)
+    u1, u2 = sorted([current_user_id, other_user_id])
+
+    # Check if friendship exists
+    friendship_query = (
+        supabase.table("friendships")
+        .select("id")
+        .eq("user1_id", u1)
+        .eq("user2_id", u2)
+        .execute()
+    )
+
+    if not friendship_query.data:
+        raise HTTPException(status_code=404, detail="Friendship does not exist.")
+
+    # Delete friendship
+    delete_result = (
+        supabase.table("friendships")
+        .delete()
+        .eq("user1_id", u1)
+        .eq("user2_id", u2)
+        .execute()
+    )
+
+    return {"friend_removed": True}
