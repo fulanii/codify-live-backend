@@ -2,6 +2,7 @@ import os
 import httpx
 from dotenv import load_dotenv
 
+from fastapi.responses import JSONResponse
 from fastapi import APIRouter, status, HTTPException, Request, Response, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -418,6 +419,33 @@ def get_me(
     except Exception as e:
         print("Error in /auth/me:", e)
         raise HTTPException(500, detail=f"Internal server error: {e}")
+
+
+@router.post("/logout")
+def logout():
+    """
+    Logs out the user by clearing the refresh_token cookie that was used
+    during authentication. Supabase itself cannot invalidate JWTs early,
+    so logout consists of deleting the refresh token stored in cookies.
+    """
+
+    try:
+        supabase.auth.sign_out()
+    except Exception:
+        pass
+
+    response = JSONResponse({"logged_out": True})
+
+    # Delete your custom refresh token cookie
+    response.delete_cookie(
+        key="refresh_token",
+        path="/auth/access",                 # must match set_cookie()
+        domain=env_none_or_str("COOKIE_DOMAIN", None),
+    )
+
+    return response
+
+
 
 
 # TODO: Implement Password reset
