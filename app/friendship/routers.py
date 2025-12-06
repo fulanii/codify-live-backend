@@ -519,3 +519,6 @@ def remove_friend(
     )
 
     return {"friend_removed": True}
+
+
+# TODO: Implement Block
