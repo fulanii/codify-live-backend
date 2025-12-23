@@ -20,6 +20,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
             algorithms=["HS256"],
             issuer=f"{os.getenv('PUBLIC_SUPABASE_URL')}/auth/v1",
             options={"verify_aud": False},
+            leeway=60,
         )
         return payload
 
