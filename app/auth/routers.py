@@ -43,7 +43,7 @@ def register_user(data: UserRegistrationModel):
         - at least one uppercase letter
         - at least one number
         - at least one special character
-          (validated using: `^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+={}\[\]|\\;:'\",.<>?/~`]).{8,}$`)
+        (validated using: `^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+={}\[\]|\\;:'\",.<>?/~`]).{8,}$`)
 
     **Returns**
     - User ID
@@ -439,7 +439,7 @@ def logout():
     # Delete your custom refresh token cookie
     response.delete_cookie(
         key="refresh_token",
-        path="/auth/access",                 # must match set_cookie()
+        path="/auth/access", # must match set_cookie()
         domain=env_none_or_str("COOKIE_DOMAIN", None),
     )
 
