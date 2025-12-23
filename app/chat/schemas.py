@@ -59,3 +59,4 @@ class GetMessagesResponseModel(BaseModel):
 # Participants
 class GetConversationParticipantsResonseModel(BaseModel):
     participant_username: str
+    is_friend: bool

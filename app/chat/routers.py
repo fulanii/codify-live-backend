@@ -172,7 +172,37 @@ def send_message(
         user_data = supabase.auth.get_user(jwt=token)
         sender_id = str(user_data.user.id)
 
-        # TODO: 1. Ensure users are friends
+        # Ensure users are friends
+        # Fetch all members in the conversation
+        members_res = (
+            supabase.table("conversation_members")
+            .select("user_id")
+            .eq("conversation_id", str(data.conversation_id))
+            .execute()
+        )
+
+        user_ids = [row["user_id"] for row in members_res.data]
+
+        other_user_id = next(uid for uid in user_ids if uid != sender_id)
+
+        # Canonical ordering
+        u1, u2 = sorted([sender_id, other_user_id])
+
+        # Check friendship still exists
+        friendship = (
+            supabase.table("friendships")
+            .select("id")
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
+            .limit(1)
+            .execute()
+        )
+
+        if not friendship.data:
+            raise HTTPException(
+                status_code=403,
+                detail="You are no longer friends with this user.",
+            )
 
         # 2. Ensure user is a member of the conversation
         membership = (
@@ -368,15 +398,12 @@ def get_messages(
             }
             final_data.append(updated_row)
 
-        print(final_data)
-
         return {"messages": final_data}
 
     except HTTPException:
         raise
 
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve messages")
 
 
@@ -426,6 +453,23 @@ def get_conversation_participant_username(
                 status_code=403, detail="You are not a member of this conversation"
             )
 
+        # Canonical ordering
+        u1, u2 = sorted([user1_id, user2_id])
+
+        # check friendship.
+        is_friend = True
+        friendship = (
+            supabase.table("friendships")
+            .select("id")
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
+            .limit(1)
+            .execute()
+        )
+
+        if not friendship.data:
+            is_friend = False
+
         other_user_id = user2_id if user_id == user1_id else user1_id
 
         username = get_username(other_user_id)
@@ -435,7 +479,7 @@ def get_conversation_participant_username(
                 status_code=404, detail="Participant username could not be found."
             )
 
-        return {"participant_username": username}
+        return {"participant_username": username, "is_friend": is_friend}
 
     except HTTPException as http_ex:
         raise http_ex
