@@ -3,6 +3,7 @@ annotated-types==0.7.0
 anyio==4.11.0
 certifi==2025.10.5
 cffi==2.0.0
+charset-normalizer==3.4.4
 click==8.3.0
 cryptography==46.0.3
 deprecation==2.1.0
@@ -11,6 +12,7 @@ email-validator==2.3.0
 fastapi==0.120.1
 fastapi-cli==0.0.14
 fastapi-cloud-cli==0.3.1
+gotrue==2.12.4
 greenlet==3.2.4
 h11==0.16.0
 h2==4.3.0
@@ -38,6 +40,7 @@ python-dotenv==1.2.1
 python-multipart==0.0.20
 pyyaml==6.0.3
 realtime==2.24.0
+requests==2.32.5
 rich==14.2.0
 rich-toolkit==0.15.1
 rignore==0.7.2
