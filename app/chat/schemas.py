@@ -19,16 +19,43 @@ class MessageData(BaseModel):
 
 
 class SendMessageResponseModel(BaseModel):
-    response_data: List[MessageData]
+    response_data: list[MessageData]
 
-    # {
-    #     "message": [
-    #         {
-    #             "id": "9aa65976-f9f5-4cd2-8645-7742d0420390",
-    #             "conversation_id": "ca396970-f302-463d-a8ff-9d5dc22c50d5",
-    #             "sender_id": "10dab277-efaf-4352-a683-287fd8086109",
-    #             "content": "whatssup)",
-    #             "created_at": "2025-12-14T04:31:26.416852+00:00",
-    #         }
-    #     ]
-    # }
+
+# Direct messages
+class CreateDirectConversationModel(BaseModel):
+    receiver_id: UUID
+
+
+class CreateDirectConversationResponseModel(BaseModel):
+    conversation_id: UUID
+    is_new: bool
+
+
+# Get Conversations
+class ConversationData(BaseModel):
+    id: UUID
+    is_group: bool
+    created_at: datetime
+
+
+class GetConversationsResponseModel(BaseModel):
+    conversations: List[ConversationData]
+
+
+# Get messages
+class MessagesData(BaseModel):
+    id: UUID
+    sender_id: UUID
+    sender_username: str
+    content: str
+    created_at: datetime
+
+
+class GetMessagesResponseModel(BaseModel):
+    messages: List[MessagesData]
+
+
+# Participants
+class GetConversationParticipantsResonseModel(BaseModel):
+    participant_username: str
