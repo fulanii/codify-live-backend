@@ -412,13 +412,13 @@ def get_messages(
     response_model=GetConversationParticipantsResonseModel,
     status_code=200,
 )
-def get_conversation_participant_username(
+def get_conversation_participant_info(
     conversation_id: str,
     user=Depends(verify_token),
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     """
-    Retrieves the username of the other participant in a direct conversation.
+    Retrieves the username and friendship status of the other participant in a direct conversation.
 
     Args:
         conversation_id (str): The unique identifier for the direct conversation.
@@ -426,7 +426,7 @@ def get_conversation_participant_username(
         credentials (HTTPAuthorizationCredentials): Bearer token for authentication.
 
     Returns:
-        {'participant_username': 'actual_username'}
+        {'participant_username': 'actual_username', 'is_friend': bool}
 
     """
     try:
