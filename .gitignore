@@ -9,6 +9,7 @@ __pycache__/
 *.egg
 *.manifest
 *.spec
+apiSchema.json
 
 # Virtualenv
 env/

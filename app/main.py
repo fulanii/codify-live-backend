@@ -22,6 +22,7 @@ app.include_router(chat_router.router, prefix="/chat", tags=["Chat"])
 # TODO: update origins for prod
 origins = [
     "http://localhost:5173",
+    "http://localhost:8080"
 ]
 
 app.add_middleware(
