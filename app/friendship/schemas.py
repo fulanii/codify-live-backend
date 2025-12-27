@@ -44,9 +44,16 @@ class AcceptFriendRequestModel(BaseModel):
     sender_id: UUID
 
 
+class FriendshipDetails(BaseModel):
+    friendship_id: UUID
+    user1_id: UUID
+    user2_id: UUID
+    created_at: datetime
+
+
 class AcceptFriendRequestResponseModel(BaseModel):
     friendship_accept: bool
-    details: AcceptFriendRequestDetail
+    details: FriendshipDetails
 
 
 # Decline friendship request
