@@ -439,13 +439,11 @@ def logout():
     # Delete your custom refresh token cookie
     response.delete_cookie(
         key="refresh_token",
-        path="/auth/access", # must match set_cookie()
+        path="/auth/access",  # must match set_cookie()
         domain=env_none_or_str("COOKIE_DOMAIN", None),
     )
 
     return response
-
-
 
 
 # TODO: Implement Password reset

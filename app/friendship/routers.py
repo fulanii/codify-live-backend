@@ -29,11 +29,13 @@ load_dotenv()
 router = APIRouter()
 security = HTTPBearer()
 
+# TODO: Add logging
+
 
 @router.get(
     "/search/{username}", response_model=FriendsSearchResponseModel, status_code=200
 )
-def username_search(username: str, user=Depends(verify_token)):
+def username_search(username: str, user=Depends(verify_token)):  # ✅
     """
     Search for users by username (prefix matching).
 
@@ -80,7 +82,9 @@ def username_search(username: str, user=Depends(verify_token)):
         raise HTTPException(status_code=500, detail="Server/Database error.")
 
 
-@router.post("/request", response_model=FriendRequestResponseModel, status_code=201)
+@router.post(
+    "/request", response_model=FriendRequestResponseModel, status_code=201
+)  # ✅
 def create_friend_request_using_username(
     data: FriendRequestModel,
     request: Request,
@@ -117,7 +121,9 @@ def create_friend_request_using_username(
     - `401`: Invalid or expired token.
     - `500`: Database or unexpected server error.
     """
-
+    token = credentials.credentials
+    sender_data = supabase.auth.get_user(jwt=token)
+    sender_id = sender_data.user.id
     receiver_username = data.receiver_username
 
     # Receiver exists
@@ -129,39 +135,38 @@ def create_friend_request_using_username(
             .execute()
         )
     except Exception:
-        raise HTTPException(500, detail="Database error while looking up receiver.")
+        raise HTTPException(500, detail="Server error.")
 
     if not receiver_query.data:
         raise HTTPException(404, detail="No matching username.")
 
     receiver_id = receiver_query.data[0]["id"]
 
-    # Get sender from token
-    try:
-        token = credentials.credentials
-        sender_data = supabase.auth.get_user(jwt=token)
-        sender_id = sender_data.user.id
-    except AuthApiError:
-        raise HTTPException(401, detail="Invalid or expired token.")
-    except Exception:
-        raise HTTPException(500, detail="Unexpected authentication error.")
-
     # Prevent sending to self
     if sender_id == receiver_id:
-        raise HTTPException(405, detail="Cannot send friend request to yourself.")
+        raise HTTPException(403, detail="Cannot send friend request to yourself.")
 
     # Prevent sending if friend request already exist
     try:
         existing_request = (
             supabase.table("friendships_requests")
             .select("sender_id, receiver_id")
-            .eq("sender_id", f"{sender_id}")
-            .eq("receiver_id", f"{receiver_id}")
+            .or_(
+                f"and(sender_id.eq.{sender_id},receiver_id.eq.{receiver_id}),"  # Scenario A
+                f"and(sender_id.eq.{receiver_id},receiver_id.eq.{sender_id})"  # Scenario B
+            )
+            # .or_(
+            #     f"sender_id.eq.{sender_id},receiver_id.eq.{receiver_id},"
+            #     f"sender_id.eq.{receiver_id},receiver_id.eq.{sender_id}"
+            # )
+            # .eq("receiver_id", receiver_id)
+            # .eq("sender_id", sender_id)
+            .limit(1)
             .execute()
         )
     except Exception as e:
-        raise HTTPException(500, detail="Database error while checking friendship.")
-
+        raise HTTPException(500, detail="Server error.")
+    print(existing_request)
     if existing_request.data:
         raise HTTPException(
             409,
@@ -170,18 +175,18 @@ def create_friend_request_using_username(
 
     # Prevent sending if already friends
     try:
+        u1, u2 = sorted([sender_id, receiver_id])
+
         check_friendships = (
             supabase.table("friendships")
-            .select("id")
-            .or_(
-                f"user1_id.eq.{sender_id},user2_id.eq.{receiver_id},"
-                f"user1_id.eq.{receiver_id},user2_id.eq.{sender_id}"
-            )
+            .select("user1_id, user2_id")
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
             .limit(1)
             .execute()
         )
     except Exception as e:
-        raise HTTPException(500, detail="Database error while checking friendship.")
+        raise HTTPException(500, detail="Server error.")
 
     if check_friendships.data:
         raise HTTPException(409, detail="Already friends with this user.")
@@ -200,7 +205,7 @@ def create_friend_request_using_username(
             .execute()
         )
     except Exception as e:
-        raise HTTPException(500, detail=f"Database error while creating request: {e}")
+        raise HTTPException(500, detail=f"Server error.")
 
     return {
         "message": "Friend request sent.",
@@ -208,124 +213,94 @@ def create_friend_request_using_username(
     }
 
 
+# Accept Friend Request (only receiver can)
 @router.post(
-    "/request/accept", response_model=AcceptFriendRequestResponseModel, status_code=201
-)
+    "/request/accept", status_code=201, response_model=AcceptFriendRequestResponseModel
+)  # ✅
 def accept_friend_request(
     data: AcceptFriendRequestModel,
     user=Depends(verify_token),
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     """
-    Accept a friend request between two users.
+    Accept a pending friend request between two users.
+    Only receiver can accept friend request
 
-    This endpoint allows an authenticated user (`receiver`) to accept a
-    pending friend request sent by another user (`sender`). Once accepted:
+    The authenticated user becomes the `receiver`. This endpoint:
+    - verifies a pending friend request exists from sender to receiver
+    - deletes the request row
+    - creates a friendship row with canonical ordering (user1 < user2)
 
-    - The `friendships_requests` row is updated to `"Accepted"`.
-    - A new friendship row is inserted into the `friendships` table
-    using (`user1_id`, `user2_id`) ordering logic.
-
-    The system checks for the existence of a matching friend request in
-    both possible sender/receiver directions to ensure correct behavior.
-
-    **Input**
-    - `sender_id`: The ID of the user who originally sent the request.
-
-    **Behavior**
-    1. Validate that a pending friend request exists between the two users.
-    2. Update the friend request status to `"Accepted"`.
-    3. Insert a new friendship record.
-    4. Prevents accepting a nonexistent or already-handled request.
-
-    **Returns**
-    - `200 OK`: Confirmation that the friend request was accepted.
-    - Newly created friendship record.
-
-    **Errors**
-    - `404`: No such friend request exists.
-    - `409`: Request already accepted, declined, cancelled, or invalid.
-    - `500`: Unexpected database/server error.
-
-    **Notes**
-    - Only the receiver of the request can accept it.
-    - Reverse sender/receiver orderings are checked to avoid duplication.
+    Errors:
+    - 404: no pending request exists
+    - 500: database failure
     """
 
     token = credentials.credentials
+    sender_id = str(data.sender_id)
     receiver_data = supabase.auth.get_user(jwt=token)
-
-    sender_id = data.sender_id
-    receiver_id = receiver_data.user.id
+    receiver_id = str(receiver_data.user.id)
 
     try:
-        # check to see if friendship request exist between both sender and receiver
-        check_friendships_request = (
+        # 1. Look for pending request
+        check_request = (
             supabase.table("friendships_requests")
-            .select("sender_id, receiver_id")
-            .or_(
-                f"sender_id.eq.{sender_id},receiver_id.eq.{receiver_id},"
-                f"sender_id.eq.{receiver_id},receiver_id.eq.{sender_id}"
-            )
-            .execute()
-        )
-        if not check_friendships_request.data:
-            raise HTTPException(
-                409,
-                detail="Friend request doesn't exist.",
-            )
-    except HTTPException:
-        raise HTTPException(
-            409,
-            detail="Friend request doesn't exist.",
-        )
-
-    try:
-        # if yess update friendships_requests status as accepted (delete 'Declined', 'Cancelled' later w cron job)
-        update_result = (
-            supabase.table("friendships_requests")
-            .delete()
-            .eq("sender_id", sender_id)
+            .select("id, sender_id, receiver_id, status")
             .eq("receiver_id", receiver_id)
+            .eq("sender_id", sender_id)
+            .eq("status", "Pending")
+            .limit(1)
             .execute()
         )
 
-        u1, u2 = sorted([str(sender_id), str(receiver_id)])
-
-        # create new friendship role
-        insert_new_friendship = (
-            supabase.table("friendships")
-            .insert(
-                {
-                    "user1_id": u1,
-                    "user2_id": u2,
-                }
+        if not check_request.data:
+            raise HTTPException(
+                status_code=404, detail="Friend request does not exist."
             )
+
+        # only receiver can accept
+        if receiver_id != check_request.data[0]["receiver_id"]:
+            raise HTTPException(403, detail="You can't accept this friend request.")
+
+        # 3. delete request
+        supabase.table("friendships_requests").delete().eq(
+            "id", check_request.data[0]["id"]
+        ).execute()
+
+        # 4. canonical ordering
+        u1, u2 = sorted([sender_id, receiver_id])
+
+        friendship = (
+            supabase.table("friendships")
+            .insert({"user1_id": u1, "user2_id": u2})
             .execute()
         )
 
-        returned_data = insert_new_friendship.data[0]
+        row = friendship.data[0]
 
         return {
             "friendship_accept": True,
             "details": {
-                "friendship_id": returned_data["id"],
-                "sender_id": returned_data["user1_id"],
-                "receiver_id": returned_data["user2_id"],
-                "created_at": returned_data["created_at"],
+                "friendship_id": row["id"],
+                "user1_id": row["user1_id"],
+                "user2_id": row["user2_id"],
+                "created_at": row["created_at"],
             },
         }
-    except Exception:
-        raise HTTPException(500, detail="Database error while updating friendship.")
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Server error.",
+        )
 
 
 # Decline Friend Request (only receiver can)
-# Only Receiver can decline
 @router.delete(
     "/request/decline/{sender_id}",
     response_model=DeclineFriendshipRequestResponseModel,
     status_code=200,
-)
+)  # ✅
 def decline_friend_request(
     sender_id: str,
     user=Depends(verify_token),
@@ -359,41 +334,56 @@ def decline_friend_request(
         success response.
     """
 
-    token = credentials.credentials
-    receiver_data = supabase.auth.get_user(jwt=token)
-    receiver_id = receiver_data.user.id
+    try:
 
-    # Query only pending requests
-    request_query = (
-        supabase.table("friendships_requests")
-        .select("sender_id, receiver_id, status")
-        .eq("sender_id", sender_id)
-        .eq("receiver_id", receiver_id)
-        .eq("status", "Pending")
-        .execute()
-    )
+        token = credentials.credentials
+        receiver_data = supabase.auth.get_user(jwt=token)
+        receiver_id = receiver_data.user.id
 
-    if not request_query.data:
-        raise HTTPException(status_code=404, detail="No pending friend request found.")
+        # Query only pending requests for these users
+        request_query = (
+            supabase.table("friendships_requests")
+            .select("sender_id, receiver_id, status")
+            .eq("sender_id", sender_id)
+            .eq("receiver_id", receiver_id)
+            .eq("status", "Pending")
+            .limit(1)
+            .execute()
+        )
 
-    (
-        supabase.table("friendships_requests")
-        .delete()
-        .eq("sender_id", sender_id)
-        .eq("receiver_id", receiver_id)
-        .eq("status", "Pending")
-        .execute()
-    )
+        if not request_query.data:
+            raise HTTPException(
+                status_code=404, detail="No pending friend request found."
+            )
 
-    return {"request_declined": True}
+        # only receiver can decline
+        if receiver_id != request_query.data[0]["receiver_id"]:
+            raise HTTPException(403, detail="You can't decline this friend request.")
+
+        (
+            supabase.table("friendships_requests")
+            .delete()
+            .eq("sender_id", sender_id)
+            .eq("receiver_id", receiver_id)
+            .eq("status", "Pending")
+            .execute()
+        )
+
+        return {"request_declined": True}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Server error.",
+        )
 
 
-# Cancel Friend Request (Only the sender can cancel.)print()
+# Cancel Friend Request (Only the sender can cancel.)
 @router.delete(
     "/request/cancel/{receiver_id}",
     response_model=CancelFriendshipRequestResponseModel,
     status_code=200,
-)
+)  # ✅
 def cancel_friend_request(
     receiver_id: str,
     user=Depends(verify_token),
@@ -425,43 +415,53 @@ def cancel_friend_request(
         the 'Pending' state. Only the original sender can perform this action.
     """
 
-    token = credentials.credentials
-    sender_data = supabase.auth.get_user(jwt=token)
-    sender_id = sender_data.user.id
+    try:
+        token = credentials.credentials
+        sender_data = supabase.auth.get_user(jwt=token)
+        sender_id = sender_data.user.id
 
-    # Check if the pending request exists
-    request_query = (
-        supabase.table("friendships_requests")
-        .select("sender_id, receiver_id, status")
-        .eq("sender_id", sender_id)
-        .eq("receiver_id", receiver_id)
-        .eq("status", "Pending")
-        .execute()
-    )
-
-    if not request_query.data:
-        raise HTTPException(
-            status_code=404, detail="No pending friend request to cancel."
+        # Check if the pending request exists
+        request_query = (
+            supabase.table("friendships_requests")
+            .select("sender_id, receiver_id, status")
+            .eq("sender_id", sender_id)
+            .eq("receiver_id", receiver_id)
+            .eq("status", "Pending")
+            .execute()
         )
 
-    # Delete the pending request
-    (
-        supabase.table("friendships_requests")
-        .delete()
-        .eq("sender_id", sender_id)
-        .eq("receiver_id", receiver_id)
-        .eq("status", "Pending")
-        .execute()
-    )
+        if not request_query.data:
+            raise HTTPException(
+                status_code=404, detail="No pending friend request to cancel."
+            )
 
-    return {"request_canceled": True}
+        # only receiver can decline
+        if sender_id != request_query.data[0]["sender_id"]:
+            raise HTTPException(403, detail="You can't decline this friend request.")
+
+        # Delete the pending request
+        (
+            supabase.table("friendships_requests")
+            .delete()
+            .eq("sender_id", sender_id)
+            .eq("receiver_id", receiver_id)
+            .eq("status", "Pending")
+            .execute()
+        )
+
+        return {"request_canceled": True}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Server error.",
+        )
 
 
 @router.delete(
     "/remove/{other_user_id}",
     response_model=RemoveFriendResponseModel,
     status_code=200,
-)
+)  # ✅
 def remove_friend(
     other_user_id: str,
     user=Depends(verify_token),
@@ -488,37 +488,42 @@ def remove_friend(
         HTTPException (500):
             If a database error occurs.
     """
+    try:
+        # Extract current authenticated user ID
+        token = credentials.credentials
+        auth_user = supabase.auth.get_user(jwt=token)
+        current_user_id = auth_user.user.id
 
-    # Extract current authenticated user ID
-    token = credentials.credentials
-    auth_user = supabase.auth.get_user(jwt=token)
-    current_user_id = auth_user.user.id
+        # Canonical ordering (must match SQL CHECK constraint)
+        u1, u2 = sorted([current_user_id, other_user_id])
 
-    # Canonical ordering (must match SQL CHECK constraint)
-    u1, u2 = sorted([current_user_id, other_user_id])
+        # Check if friendship exists
+        friendship_query = (
+            supabase.table("friendships")
+            .select("id")
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
+            .execute()
+        )
 
-    # Check if friendship exists
-    friendship_query = (
-        supabase.table("friendships")
-        .select("id")
-        .eq("user1_id", u1)
-        .eq("user2_id", u2)
-        .execute()
-    )
+        if not friendship_query.data:
+            raise HTTPException(status_code=404, detail="Friendship does not exist.")
 
-    if not friendship_query.data:
-        raise HTTPException(status_code=404, detail="Friendship does not exist.")
+        # Delete friendship
+        delete_result = (
+            supabase.table("friendships")
+            .delete()
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
+            .execute()
+        )
 
-    # Delete friendship
-    delete_result = (
-        supabase.table("friendships")
-        .delete()
-        .eq("user1_id", u1)
-        .eq("user2_id", u2)
-        .execute()
-    )
-
-    return {"friend_removed": True}
+        return {"friend_removed": True}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Server error.",
+        )
 
 
 # TODO: Implement Block
