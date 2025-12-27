@@ -172,7 +172,6 @@ def send_message(
         user_data = supabase.auth.get_user(jwt=token)
         sender_id = str(user_data.user.id)
 
-        # Ensure users are friends
         # Fetch all members in the conversation
         members_res = (
             supabase.table("conversation_members")
@@ -198,6 +197,7 @@ def send_message(
             .execute()
         )
 
+        # Ensure users are friends
         if not friendship.data:
             raise HTTPException(
                 status_code=403,
@@ -488,3 +488,6 @@ def get_conversation_participant_info(
         raise HTTPException(
             status_code=500, detail=f"An unexpected error occurred: {str(e)}"
         )
+
+
+# TODO: Add delete conversation
