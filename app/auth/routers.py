@@ -1,5 +1,6 @@
 import os
 import httpx
+import logging
 from dotenv import load_dotenv
 
 from fastapi.responses import JSONResponse
@@ -22,6 +23,7 @@ from .schemas import (
 
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 router = APIRouter()
 security = HTTPBearer()
 
@@ -55,7 +57,6 @@ def register_user(data: UserRegistrationModel):
     - 409: Email or Username already registered
     - 500: Unexpected Supabase or server error
     """
-
     # Check if username already exists
     username_check = (
         supabase.table("profiles").select("id").eq("username", data.username).execute()
@@ -73,6 +74,7 @@ def register_user(data: UserRegistrationModel):
             }
         )
     except AuthApiError as error:
+        logger.error(f"supabase_error={error}")
         raise HTTPException(status_code=409, detail=str(error))
 
     if not res.user:
@@ -86,6 +88,8 @@ def register_user(data: UserRegistrationModel):
             "username": data.username,
         }
     ).execute()
+
+    logger.info(f"user_login_success email={data.email}, username={data.username}")
 
     return {
         "id": user_id,
@@ -136,6 +140,9 @@ def login_user(user_data: UserLoginModel, response: Response):
                 max_age=60 * 60 * 24 * 7,  # 7 days
                 path="/auth/access",
             )
+
+            logger.info(f"user_login_success email={user_data.email}")
+
             return {
                 "access_token": res.session.access_token,
                 "expires_in": res.session.expires_in,
@@ -152,6 +159,7 @@ def login_user(user_data: UserLoginModel, response: Response):
         raise HTTPException(status_code=401, detail=error.message)
 
     except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=500, detail="An internal server error occurred during login."
         )

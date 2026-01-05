@@ -10,8 +10,11 @@ from .friendship import routers as friend_router
 from .chat import routers as chat_router
 
 from .core.dependencies import verify_token
+from app.utils.logging_config import setup_logging
+from app.core.middleware import logging_middleware
 
 load_dotenv()
+setup_logging()
 
 app = FastAPI()
 app.include_router(auth_router.router, prefix="/auth", tags=["Authentication"])
@@ -28,10 +31,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    
 )
 
-
-# For testing auth purposes
-@app.get("/protected")
-def protected_route(user=Depends(verify_token)):
-    return {"message": f"Hello {user['email']}, you are authenticated!"}
+# app.middleware("http")(logging_middleware)
