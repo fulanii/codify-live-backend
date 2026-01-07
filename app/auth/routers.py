@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, status, HTTPException, Request, Response, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import RedirectResponse
 
 from supabase import AuthApiError
 
@@ -71,6 +72,9 @@ def register_user(data: UserRegistrationModel):
             {
                 "email": data.email,
                 "password": data.password.get_secret_value(),
+                "options": {
+                    "email_redirect_to": "https://codifylive.com/auth/callback"
+                }
             }
         )
     except AuthApiError as error:
@@ -452,6 +456,18 @@ def logout():
     )
 
     return response
+
+
+@router.get("/callback")
+async def auth_callback(request: Request):
+    code = request.query_params.get("code")
+    
+    if not code:
+        raise HTTPException(status_code=400, detail="Auth code missing")
+
+    res = supabase.auth.exchange_code_for_session(code)
+    
+    return RedirectResponse(url="/dashboard")
 
 
 # TODO: Implement Password reset
