@@ -73,7 +73,7 @@ def register_user(data: UserRegistrationModel):
                 "email": data.email,
                 "password": data.password.get_secret_value(),
                 "options": {
-                    "email_redirect_to": "https://codifylive.com/login"
+                    "email_redirect_to": "https://codifylive.com/dashboard"
                 }
             }
         )
