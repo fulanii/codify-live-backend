@@ -16,14 +16,30 @@ from app.core.middleware import logging_middleware
 load_dotenv()
 setup_logging()
 
-app = FastAPI()
+env = os.getenv("environment")
+if env == "production":
+    app = FastAPI(
+        docs_url=None,  # Disables Swagger UI
+        redoc_url=None,  # Disables ReDoc UI
+        openapi_url=None,  # Disables the /openapi.json schema
+    )
+
+    origins = ["https://www.codifylive.com", "https://codifylive.com"]
+else:
+    app = FastAPI(
+        title="CodifyLive",
+    )
+    origins = [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://192.168.1.66:8080",
+    ]
+
+
 app.include_router(auth_router.router, prefix="/auth", tags=["Authentication"])
 app.include_router(friend_router.router, prefix="/friends", tags=["Friendship"])
 app.include_router(chat_router.router, prefix="/chat", tags=["Chat"])
 
-
-# TODO: update origins for prod
-origins = ["http://localhost:5173", "http://localhost:8080", "http://192.168.1.66:8080"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,7 +47,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    
 )
 
 # app.middleware("http")(logging_middleware)

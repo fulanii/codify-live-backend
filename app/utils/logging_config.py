@@ -3,6 +3,7 @@ from logging.config import dictConfig
 
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
+
 def setup_logging():
     dictConfig(
         {
