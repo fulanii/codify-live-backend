@@ -3,6 +3,7 @@ alter table profiles enable row level security;
 alter table friendships enable row level security;
 alter table friendships_requests enable row level security;
 alter table conversations enable row level security;
+alter table direct_conversations enable row level security;
 alter table conversation_members enable row level security;
 alter table messages enable row level security;
 
