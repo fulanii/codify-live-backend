@@ -60,6 +60,33 @@ on conversation_members for select using (
   user_id = auth.uid()
 );
 
+-- Users can read conversations they are part of
+create policy "user can read their direct conversations"
+on direct_conversations
+for select
+using (
+  auth.uid() = user1_id
+  or auth.uid() = user2_id
+);
+
+-- Users can create conversations involving themselves
+create policy "user can create direct conversations that they're part of"
+on direct_conversations
+for insert
+with check (
+  auth.uid() = user1_id
+  or auth.uid() = user2_id
+);
+
+-- (optional) prevent deletion unless member
+create policy "user can delete their own direct conversations"
+on direct_conversations
+for delete
+using (
+  auth.uid() = user1_id
+  or auth.uid() = user2_id
+);
+
 -- MESSAGES
 create policy "members read messages"
 on messages for select using (
