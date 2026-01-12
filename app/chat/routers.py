@@ -1,6 +1,7 @@
 import os
 import uuid
 import httpx
+import logging
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, status, HTTPException, Request, Response, Depends
@@ -24,6 +25,7 @@ from .schemas import (
 
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 router = APIRouter()
 security = HTTPBearer()
 
@@ -237,7 +239,7 @@ def send_message(
 
     except HTTPException:
         raise
-    except Exception:
+    except Exception as error:
         raise HTTPException(
             status_code=500,
             detail="Failed to send message.",
