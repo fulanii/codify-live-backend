@@ -72,9 +72,7 @@ def register_user(data: UserRegistrationModel):
             {
                 "email": data.email,
                 "password": data.password.get_secret_value(),
-                "options": {
-                    "email_redirect_to": "https://codifylive.com/dashboard"
-                }
+                "options": {"email_redirect_to": "https://codifylive.com/dashboard"},
             }
         )
     except AuthApiError as error:
@@ -461,13 +459,43 @@ def logout():
 @router.get("/callback")
 async def auth_callback(request: Request):
     code = request.query_params.get("code")
-    
+
     if not code:
         raise HTTPException(status_code=400, detail="Auth code missing")
 
     res = supabase.auth.exchange_code_for_session(code)
-    
+
     return RedirectResponse(url="/dashboard")
+
+
+@router.delete(
+    "/delete", 
+    status_code=status.HTTP_200_OK,
+)
+async def delete_account(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    """
+    Deletes the current authenticated user using Supabase Admin Auth.
+    """
+    token = credentials.credentials
+    user_data = supabase.auth.get_user(jwt=token)
+    user_id = user_data.user.id
+
+    try:
+        supabase.auth.admin.delete_user(user_id)
+
+        return {"success": True}
+        
+    except Exception as e:
+        logger.error(f"Failed to delete user {user_id}: {str(e)}")
+        
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="An error occurred while attempting to delete your account."
+        )
+
+
 
 
 # TODO: Implement Password reset
