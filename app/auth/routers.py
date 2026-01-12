@@ -72,9 +72,7 @@ def register_user(data: UserRegistrationModel):
             {
                 "email": data.email,
                 "password": data.password.get_secret_value(),
-                "options": {
-                    "email_redirect_to": "https://codifylive.com/dashboard"
-                }
+                "options": {"email_redirect_to": "https://codifylive.com/dashboard"},
             }
         )
     except AuthApiError as error:
@@ -461,12 +459,12 @@ def logout():
 @router.get("/callback")
 async def auth_callback(request: Request):
     code = request.query_params.get("code")
-    
+
     if not code:
         raise HTTPException(status_code=400, detail="Auth code missing")
 
     res = supabase.auth.exchange_code_for_session(code)
-    
+
     return RedirectResponse(url="/dashboard")
 
 
