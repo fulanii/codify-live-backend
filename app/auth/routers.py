@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse
 
 from supabase import AuthApiError
 
-from app.core.supabase_client import supabase
+from app.core.supabase_client import supabase, supabase_admin
 from app.utils.env_helper import env_bool, env_none_or_str
 from app.core.dependencies import verify_token
 from .schemas import (
@@ -473,6 +473,7 @@ async def auth_callback(request: Request):
     status_code=status.HTTP_200_OK,
 )
 async def delete_account(
+    response: Response,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     """
@@ -483,13 +484,13 @@ async def delete_account(
     user_id = user_data.user.id
 
     try:
-        supabase.auth.admin.delete_user(user_id)
+        supabase_admin.auth.admin.delete_user(user_id)
+        response.delete_cookie(key="refresh_token", path="/auth/access")
 
         return {"success": True}
         
     except Exception as e:
         logger.error(f"Failed to delete user {user_id}: {str(e)}")
-        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="An error occurred while attempting to delete your account."
