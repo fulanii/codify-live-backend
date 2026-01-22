@@ -273,7 +273,7 @@ def get_me(
             supabase.table("profiles")
             .select("username, created_at")
             .eq("id", user_id)
-            .single()
+            .limit(1)
             .execute()
         )
 
@@ -457,7 +457,7 @@ def logout():
 
 
 @router.get("/callback")
-async def auth_callback(request: Request):
+def auth_callback(request: Request):
     code = request.query_params.get("code")
 
     if not code:
@@ -472,7 +472,7 @@ async def auth_callback(request: Request):
     "/delete", 
     status_code=status.HTTP_200_OK,
 )
-async def delete_account(
+def delete_account(
     response: Response,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
