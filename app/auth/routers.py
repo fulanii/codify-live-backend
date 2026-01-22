@@ -276,6 +276,7 @@ def get_me(
             .select("username, created_at")
             .eq("id", user_id)
             .limit(1)
+            .single()
             .execute()
         )
 
@@ -283,6 +284,7 @@ def get_me(
             raise HTTPException(404, "Profile not found.")
 
         profile = profile_query.data
+
 
         # --- 3. Fetch friendships ---
         # Need to find all rows where user1_id = me OR user2_id = me
@@ -429,7 +431,7 @@ def get_me(
         }
 
     except Exception as e:
-        print("Error in /auth/me:", e)
+        print(f"error: {e}")
         raise HTTPException(500, detail=f"Internal server error: {e}")
 
 
