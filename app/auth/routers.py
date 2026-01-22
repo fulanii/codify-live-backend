@@ -86,7 +86,7 @@ def register_user(data: UserRegistrationModel):
 
     user_id = res.user.id
 
-    supabase.table("profiles").insert(
+    supabase_admin.table("profiles").insert(
         {
             "id": user_id,
             "username": data.username,
@@ -163,7 +163,7 @@ def login_user(user_data: UserLoginModel, response: Response):
         raise HTTPException(status_code=401, detail=error.message)
 
     except Exception as e:
-        print(e)
+        logger.error(f"user_login_failed error={e}")
         raise HTTPException(
             status_code=500, detail="An internal server error occurred during login."
         )
@@ -199,6 +199,7 @@ def get_new_access(request: Request, response: Response):
     refresh_token = request.cookies.get(COOKIE_NAME)
 
     if not refresh_token:
+        logger.error(f"error_getting_token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No refresh token provided.",
@@ -223,6 +224,7 @@ def get_new_access(request: Request, response: Response):
         return {"access_token": new_access_token}
 
     except Exception as e:
+        logger.error(f"error_issuing_new_access_token error={e}")
         response.delete_cookie(
             key=COOKIE_NAME,
             domain=os.getenv("COOKIE_DOMAIN"),
@@ -284,7 +286,6 @@ def get_me(
             raise HTTPException(404, "Profile not found.")
 
         profile = profile_query.data
-
 
         # --- 3. Fetch friendships ---
         # Need to find all rows where user1_id = me OR user2_id = me
@@ -431,7 +432,7 @@ def get_me(
         }
 
     except Exception as e:
-        print(f"error: {e}")
+        logger.error(f"error_creating_me error={e}")
         raise HTTPException(500, detail=f"Internal server error: {e}")
 
 
