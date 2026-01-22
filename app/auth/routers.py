@@ -64,6 +64,7 @@ def register_user(data: UserRegistrationModel):
     )
 
     if username_check.data:
+        logger.error(f"username_exist username={username_check.data}")
         raise HTTPException(status_code=409, detail="Username already taken.")
 
     # Create Supabase Auth user
@@ -76,10 +77,11 @@ def register_user(data: UserRegistrationModel):
             }
         )
     except AuthApiError as error:
-        logger.error(f"supabase_error={error}")
+        logger.error(f"supabase_api_error={error}")
         raise HTTPException(status_code=409, detail=str(error))
 
     if not res.user:
+        logger.error(f"failed_user_creation supabase_response={res}")
         raise HTTPException(status_code=400, detail="Failed to create user")
 
     user_id = res.user.id
@@ -91,7 +93,7 @@ def register_user(data: UserRegistrationModel):
         }
     ).execute()
 
-    logger.info(f"user_login_success email={data.email}, username={data.username}")
+    logger.info(f"user_register_success email={data.email}, username={data.username}")
 
     return {
         "id": user_id,
@@ -469,7 +471,7 @@ def auth_callback(request: Request):
 
 
 @router.delete(
-    "/delete", 
+    "/delete",
     status_code=status.HTTP_200_OK,
 )
 def delete_account(
@@ -488,15 +490,13 @@ def delete_account(
         response.delete_cookie(key="refresh_token", path="/auth/access")
 
         return {"success": True}
-        
+
     except Exception as e:
         logger.error(f"Failed to delete user {user_id}: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="An error occurred while attempting to delete your account."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while attempting to delete your account.",
         )
-
-
 
 
 # TODO: Implement Password reset

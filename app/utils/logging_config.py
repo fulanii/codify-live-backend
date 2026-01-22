@@ -14,7 +14,7 @@ def setup_logging():
                     "format": LOG_FORMAT,
                 },
                 "json": {  # optional structured logs for prod
-                    "format": '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","message":"%(message)s"}'
+                    "format": '{"time":"%(asctime)s","level":"Logger %(levelname)s","logger":"%(name)s","message":"%(message)s"}'
                 },
             },
             "handlers": {
