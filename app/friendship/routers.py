@@ -357,12 +357,14 @@ def decline_friend_request(
         )
 
         if not request_query.data:
+            logger.error(f"no_pending_friendship")
             raise HTTPException(
                 status_code=404, detail="No pending friend request found."
             )
 
         # only receiver can decline
         if receiver_id != request_query.data[0]["receiver_id"]:
+            logger.error(f"friend_cant_decline_error error={e}")
             raise HTTPException(403, detail="You can't decline this friend request.")
 
         (
@@ -377,6 +379,7 @@ def decline_friend_request(
         return {"request_declined": True}
 
     except Exception as e:
+        logger.error(f"friend_decline_error error={e}")
         raise HTTPException(
             status_code=500,
             detail="Server error.",
