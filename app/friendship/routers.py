@@ -1,6 +1,7 @@
 import os
 import uuid
 import httpx
+import logging
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, status, HTTPException, Request, Response, Depends
@@ -8,7 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from supabase import AuthApiError
 
-from app.core.supabase_client import supabase
+from app.core.supabase_client import supabase, supabase_admin
 from app.utils.env_helper import env_bool, env_none_or_str
 from app.core.dependencies import verify_token
 
@@ -26,6 +27,7 @@ from .schemas import (
 
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 router = APIRouter()
 security = HTTPBearer()
 
@@ -216,7 +218,7 @@ def create_friend_request_using_username(
 # Accept Friend Request (only receiver can)
 @router.post(
     "/request/accept", status_code=201, response_model=AcceptFriendRequestResponseModel
-)  # ✅
+)  # ✅✅
 def accept_friend_request(
     data: AcceptFriendRequestModel,
     user=Depends(verify_token),
@@ -254,16 +256,18 @@ def accept_friend_request(
         )
 
         if not check_request.data:
+            logger.info(f"friend_request_doesnt_exist")
             raise HTTPException(
                 status_code=404, detail="Friend request does not exist."
             )
 
         # only receiver can accept
         if receiver_id != check_request.data[0]["receiver_id"]:
+            logger.info(f"user_cant_accept_friend_request")
             raise HTTPException(403, detail="You can't accept this friend request.")
 
         # 3. delete request
-        supabase.table("friendships_requests").delete().eq(
+        supabase_admin.table("friendships_requests").delete().eq(
             "id", check_request.data[0]["id"]
         ).execute()
 
@@ -271,7 +275,7 @@ def accept_friend_request(
         u1, u2 = sorted([sender_id, receiver_id])
 
         friendship = (
-            supabase.table("friendships")
+            supabase_admin.table("friendships")
             .insert({"user1_id": u1, "user2_id": u2})
             .execute()
         )
@@ -289,6 +293,7 @@ def accept_friend_request(
         }
 
     except Exception as e:
+        logger.error(f"error_asccepting_friend error={e}")
         raise HTTPException(
             status_code=500,
             detail="Server error.",
