@@ -284,7 +284,7 @@ def get_conversations(
         user_id = user_data.user.id
 
         conversations = (
-            supabase.table("conversation_members")
+            supabase_admin.table("conversation_members")
             .select(
                 """
                 conversation_id,
