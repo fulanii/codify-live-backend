@@ -9,7 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from supabase import AuthApiError
 
-from app.core.supabase_client import supabase
+from app.core.supabase_client import supabase, supabase_admin
 from app.core.dependencies import verify_token
 from app.utils.get_username import get_username
 
@@ -358,7 +358,7 @@ def get_messages(
 
         # Verify conversation exists
         conversation_check = (
-            supabase.table("conversations")
+            supabase_admin.table("conversations")
             .select("id")
             .eq("id", conversation_id)
             .limit(1)
@@ -370,7 +370,7 @@ def get_messages(
 
         # Verify user is a member of the conversation
         membership_check = (
-            supabase.table("conversation_members")
+            supabase_admin.table("conversation_members")
             .select("id")
             .eq("conversation_id", conversation_id)
             .eq("user_id", str(user_id))
@@ -384,7 +384,7 @@ def get_messages(
             )
 
         messages = (
-            supabase.table("messages")
+            supabase_admin.table("messages")
             .select("id, sender_id, content, created_at")
             .eq("conversation_id", conversation_id)
             .order("created_at", desc=False)
