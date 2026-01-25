@@ -305,7 +305,7 @@ def accept_friend_request(
     "/request/decline/{sender_id}",
     response_model=DeclineFriendshipRequestResponseModel,
     status_code=200,
-)  # ✅
+)  # ✅✅
 def decline_friend_request(
     sender_id: str,
     user=Depends(verify_token),
@@ -357,14 +357,14 @@ def decline_friend_request(
         )
 
         if not request_query.data:
-            logger.error(f"no_pending_friendship")
+            logger.info(f"no_pending_friendship")
             raise HTTPException(
                 status_code=404, detail="No pending friend request found."
             )
 
         # only receiver can decline
         if receiver_id != request_query.data[0]["receiver_id"]:
-            logger.error(f"friend_cant_decline_error error={e}")
+            logger.error(f"user_cant_decline_error user_id={receiver_id}")
             raise HTTPException(403, detail="You can't decline this friend request.")
 
         (
@@ -439,12 +439,14 @@ def cancel_friend_request(
         )
 
         if not request_query.data:
+            logger.info(f"no_pending_friend_req")
             raise HTTPException(
                 status_code=404, detail="No pending friend request to cancel."
             )
 
         # only receiver can decline
         if sender_id != request_query.data[0]["sender_id"]:
+            logger.info(f"user_cant_decline_friend_rq")
             raise HTTPException(403, detail="You can't decline this friend request.")
 
         # Delete the pending request
@@ -459,6 +461,7 @@ def cancel_friend_request(
 
         return {"request_canceled": True}
     except Exception as e:
+        logger.error(f"cancel_friend_error error={e}")
         raise HTTPException(
             status_code=500,
             detail="Server error.",
@@ -515,6 +518,7 @@ def remove_friend(
         )
 
         if not friendship_query.data:
+            logger.info("friendship_doesn't_exist")
             raise HTTPException(status_code=404, detail="Friendship does not exist.")
 
         # Delete friendship
@@ -528,6 +532,7 @@ def remove_friend(
 
         return {"friend_removed": True}
     except Exception as e:
+        logger.error(f"error_removing_friend error={e}")
         raise HTTPException(
             status_code=500,
             detail="Server error.",
