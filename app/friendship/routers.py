@@ -196,7 +196,7 @@ def create_friend_request_using_username(
     # Create request
     try:
         created_request = (
-            supabase.table("friendships_requests")
+            supabase_admin.table("friendships_requests")
             .insert(
                 {
                     "sender_id": sender_id,
