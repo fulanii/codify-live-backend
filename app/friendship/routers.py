@@ -368,7 +368,7 @@ def decline_friend_request(
             raise HTTPException(403, detail="You can't decline this friend request.")
 
         (
-            supabase.table("friendships_requests")
+            supabase_admin.table("friendships_requests")
             .delete()
             .eq("sender_id", sender_id)
             .eq("receiver_id", receiver_id)
