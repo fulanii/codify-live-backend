@@ -109,7 +109,7 @@ def get_or_create_direct_conversation(
         conversation_id = convo_res.data[0]["id"]
 
         # 4. Add members
-        supabase.table("conversation_members").insert(
+        supabase_admin.table("conversation_members").insert(
             [
                 {"conversation_id": conversation_id, "user_id": sender_id},
                 {"conversation_id": conversation_id, "user_id": receiver_id},
@@ -117,7 +117,7 @@ def get_or_create_direct_conversation(
         ).execute()
 
         # 5. Create direct conversation mapping
-        supabase.table("direct_conversations").insert(
+        supabase_admin.table("direct_conversations").insert(
             {
                 "conversation_id": conversation_id,
                 "user1_id": u1,
@@ -132,7 +132,8 @@ def get_or_create_direct_conversation(
 
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        logger.error(f"error_direct_converasation error={e}")
         raise HTTPException(
             status_code=500,
             detail="Failed to create or fetch conversation.",
@@ -224,7 +225,7 @@ def send_message(
 
         # 3. Insert message
         msg_res = (
-            supabase.table("messages")
+            supabase_admin.table("messages")
             .insert(
                 {
                     "conversation_id": str(data.conversation_id),
@@ -240,6 +241,7 @@ def send_message(
     except HTTPException:
         raise
     except Exception as error:
+        logger.error(f"error_direct_converasation error={error}")
         raise HTTPException(
             status_code=500,
             detail="Failed to send message.",
@@ -311,6 +313,7 @@ def get_conversations(
         raise
 
     except Exception as e:
+        logger.error(f"get_conversation_error error={e}")
         raise HTTPException(status_code=500, detail="Failed to fetch conversations")
 
 
@@ -406,6 +409,7 @@ def get_messages(
         raise
 
     except Exception as e:
+        logger.error(f"get_messages_error error={e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve messages")
 
 
@@ -487,6 +491,7 @@ def get_conversation_participant_info(
         raise http_ex
 
     except Exception as e:
+        logger.error(f"get_conversations_participant_error error={e}")
         raise HTTPException(
             status_code=500, detail=f"An unexpected error occurred: {str(e)}"
         )

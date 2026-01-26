@@ -84,9 +84,7 @@ def username_search(username: str, user=Depends(verify_token)):  # ✅
         raise HTTPException(status_code=500, detail="Server/Database error.")
 
 
-@router.post(
-    "/request", response_model=FriendRequestResponseModel, status_code=201
-)  #
+@router.post("/request", response_model=FriendRequestResponseModel, status_code=201)  #
 def create_friend_request_using_username(
     data: FriendRequestModel,
     request: Request,
@@ -207,6 +205,7 @@ def create_friend_request_using_username(
             .execute()
         )
     except Exception as e:
+        logger.error(f"error_creating_friend_reuest error={e}")
         raise HTTPException(500, detail=f"Server error.")
 
     return {
@@ -218,7 +217,7 @@ def create_friend_request_using_username(
 # Accept Friend Request (only receiver can)
 @router.post(
     "/request/accept", status_code=201, response_model=AcceptFriendRequestResponseModel
-)  # 
+)  #
 def accept_friend_request(
     data: AcceptFriendRequestModel,
     user=Depends(verify_token),
@@ -305,7 +304,7 @@ def accept_friend_request(
     "/request/decline/{sender_id}",
     response_model=DeclineFriendshipRequestResponseModel,
     status_code=200,
-)  # 
+)  #
 def decline_friend_request(
     sender_id: str,
     user=Depends(verify_token),
@@ -391,7 +390,7 @@ def decline_friend_request(
     "/request/cancel/{receiver_id}",
     response_model=CancelFriendshipRequestResponseModel,
     status_code=200,
-)  # 
+)  #
 def cancel_friend_request(
     receiver_id: str,
     user=Depends(verify_token),
@@ -472,7 +471,7 @@ def cancel_friend_request(
     "/remove/{other_user_id}",
     response_model=RemoveFriendResponseModel,
     status_code=200,
-)  # 
+)  #
 def remove_friend(
     other_user_id: str,
     user=Depends(verify_token),
