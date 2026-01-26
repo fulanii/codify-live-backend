@@ -104,7 +104,7 @@ def get_or_create_direct_conversation(
 
         # 3. Create new conversation
         convo_res = (
-            supabase.table("conversations").insert({"is_group": False}).execute()
+            supabase_admin.table("conversations").insert({"is_group": False}).execute()
         )
         conversation_id = convo_res.data[0]["id"]
 
