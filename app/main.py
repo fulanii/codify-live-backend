@@ -19,6 +19,7 @@ setup_logging()
 env = os.getenv("environment")
 if env == "production":
     app = FastAPI(
+        title="CodifyLive",
         docs_url=None,  # Disables Swagger UI
         redoc_url=None,  # Disables ReDoc UI
         openapi_url=None,  # Disables the /openapi.json schema
@@ -27,9 +28,6 @@ if env == "production":
     origins = [
         "https://www.codifylive.com",
         "https://codifylive.com",
-        "http://localhost:5173",
-        "http://localhost:8080",
-        "http://192.168.1.66:8080",
     ]
 else:
     app = FastAPI(
