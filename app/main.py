@@ -1,8 +1,5 @@
 import logging
-from contextlib import asynccontextmanager
 
-from alembic import command
-from alembic.config import Config
 from fastapi import FastAPI
 
 from app.auth.routers import login_router

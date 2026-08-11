@@ -20,17 +20,11 @@ class UserModel(Base):
 
     id: Mapped[UUID] = mapped_column(UUID, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(30), nullable=False)
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True, nullable=False
-    )
-    password_hash: Mapped[str | None] = mapped_column(
-        String, nullable=True, deferred=True
-    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String, nullable=True, deferred=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    auth_provider: Mapped[str] = mapped_column(
-        String(20), default=AuthProvider.GOOGLE, nullable=False
-    )
+    auth_provider: Mapped[str] = mapped_column(String(20), default=AuthProvider.GOOGLE, nullable=False)
 
     def set_password(self, plaintext_password: str) -> None:
         self.password_hash = _hasher.hash(plaintext_password)

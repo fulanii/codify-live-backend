@@ -1,1 +1,1 @@
-from .user import UserModel
+from .user import UserModel  # noqa: F401

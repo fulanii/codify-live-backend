@@ -18,7 +18,7 @@ def login(login_data: UserLoginRequest):
     # refresh in http only cookie
     # access in res model
 
-    email = login_data.email
-    password = login_data.password
+    # email = login_data.email
+    # password = login_data.password
 
     return
