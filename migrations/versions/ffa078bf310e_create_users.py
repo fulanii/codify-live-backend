@@ -1,9 +1,9 @@
-"""create users
+"""
+create users
 
 Revision ID: ffa078bf310e
 Revises:
 Create Date: 2026-08-10 17:13:13.132510
-
 """
 
 from typing import Sequence, Union
