@@ -1,7 +1,8 @@
+import uuid
 from enum import StrEnum
 
 from pwdlib import PasswordHash
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,7 +19,9 @@ class AuthProvider(StrEnum):
 class UserModel(Base):
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
     name: Mapped[str] = mapped_column(String(30), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True, deferred=True)
