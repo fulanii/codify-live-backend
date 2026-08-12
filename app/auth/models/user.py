@@ -27,6 +27,9 @@ class UserModel(Base):
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True, deferred=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     auth_provider: Mapped[str] = mapped_column(String(20), default=AuthProvider.GOOGLE, nullable=False)
 
     def set_password(self, plaintext_password: str) -> None:
