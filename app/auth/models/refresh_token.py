@@ -24,4 +24,4 @@ class RefreshTokenModel(Base):
 
     @property
     def is_expired(self) -> bool:
-        return datetime.datetime.now() > self.expires_at
+        return datetime.datetime.now(datetime.UTC) > self.expires_at
