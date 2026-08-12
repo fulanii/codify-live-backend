@@ -31,6 +31,8 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 async def login(login_data: UserLoginRequest, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
     """
+    TODO: Add loggging, rate limitting and tests
+
     Authenticate a user with email and password.
 
     **Endpoint:** POST `/auth/login`

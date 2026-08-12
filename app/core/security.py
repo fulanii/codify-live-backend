@@ -72,7 +72,6 @@ def set_refresh_cookie(response, raw_refresh: str):
         secure=settings.PRODUCTION,
         samesite="Lax",
         path="/auth",
-        domain=settings.COOKIE_DOMAIN if settings.PRODUCTION else None,
     )
 
 
@@ -82,5 +81,4 @@ def delete_refresh_cookie(response) -> None:
     response.delete_cookie(
         key="refresh",
         path="/auth",
-        domain=settings.COOKIE_DOMAIN if settings.PRODUCTION else None,
     )
