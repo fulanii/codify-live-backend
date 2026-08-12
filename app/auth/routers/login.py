@@ -197,6 +197,7 @@ async def login(login_data: UserLoginRequest, response: Response, db: Annotated[
         "email": user_data.email,
         "is_verified": user_data.is_verified,
         "is_active": user_data.is_active,
+        "auth_provider": user_data.auth_provider,
         "access_token": access_token,
     }
 
