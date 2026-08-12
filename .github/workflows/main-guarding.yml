@@ -68,5 +68,6 @@ jobs:
           alembic downgrade base
           alembic upgrade head
 
-      - name: Test
-        run: pytest
+      # no test yet uncooment once added
+      # - name: Test
+      #   run: pytest
