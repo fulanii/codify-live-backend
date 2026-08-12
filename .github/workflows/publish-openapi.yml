@@ -1,105 +1,103 @@
 name: Publish API Docs
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+'on':
+    push:
+        branches:
+            - main
+            - master
+    workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+    contents: read
+    pages: write
+    id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
-
-env:
-  DATABASE_URL: postgresql+asyncpg://placeholder:placeholder@localhost:5432/placeholder
-  SECRET_KEY: placeholder
-  ALGORITHM: HS256
-  ACCESS_TOKEN_EXPIRE_MINUTES: "15"
-  REFRESH_TOKEN_EXPIRE_DAYS: "7"
-  PRODUCTION: "false"
-  GOOGLE_CLIENT_ID: placeholder
-  GOOGLE_CLIENT_SECRET: placeholder
+    group: pages
+    cancel-in-progress: true
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                    python-version: '3.11'
+                    cache: pip
+                    cache-dependency-path: requirements.txt
+            -
+                name: Install Dependencies
+                run: |
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+            -
+                name: Generate OpenAPI schema
+                env:
+                    DATABASE_URL: postgresql+asyncpg://placeholder:placeholder@localhost:5432/placeholder
+                    SECRET_KEY: placeholder
+                    ALGORITHM: HS256
+                    ACCESS_TOKEN_EXPIRE_MINUTES: '15'
+                    REFRESH_TOKEN_EXPIRE_DAYS: '7'
+                    PRODUCTION: 'false'
+                    GOOGLE_CLIENT_ID: placeholder
+                    GOOGLE_CLIENT_SECRET: placeholder
+                run: |
+                    mkdir -p _site
+                    python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > _site/openapi.json
+            -
+                name: Build docs page
+                run: |
+                    cat > _site/index.html <<'HTML'
+                    <!doctype html>
+                    <html lang="en">
+                      <head>
+                        <meta charset="utf-8" />
+                        <meta name="viewport" content="width=device-width, initial-scale=1" />
+                        <title>CodifyLive API</title>
+                        <link
+                          rel="stylesheet"
+                          href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css"
+                        />
+                        <style>
+                          body { margin: 0; }
+                          .swagger-ui .topbar { display: none; }
+                        </style>
+                      </head>
+                      <body>
+                        <div id="swagger-ui"></div>
+                        <script
+                          src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"
+                          crossorigin
+                        ></script>
+                        <script>
+                          window.ui = SwaggerUIBundle({
+                            url: './openapi.json',
+                            dom_id: '#swagger-ui',
+                            deepLinking: true,
+                            supportedSubmitMethods: [],
+                          });
+                        </script>
+                      </body>
+                    </html>
+                    HTML
+            -
+                name: Upload Pages artifact
+                uses: actions/upload-pages-artifact@v3
+                with:
+                    path: _site
 
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: requirements.txt
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Generate OpenAPI schema
-        run: |
-          mkdir -p site
-          python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > site/openapi.json
-
-      - name: Build docs page
-        run: |
-          cat > site/index.html <<'HTML'
-          <!doctype html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <title>CodifyLive API</title>
-              <link
-                rel="stylesheet"
-                href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css"
-              />
-              <style>
-                body { margin: 0; }
-                /* The topbar only holds a spec-URL input, which is meaningless
-                   for a site that serves exactly one schema. */
-                .swagger-ui .topbar { display: none; }
-              </style>
-            </head>
-            <body>
-              <div id="swagger-ui"></div>
-              <script
-                src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"
-                crossorigin
-              ></script>
-              <script>
-                window.ui = SwaggerUIBundle({
-                  url: './openapi.json',
-                  dom_id: '#swagger-ui',
-                  deepLinking: true,
-                  // Read-only: an empty list removes "Try it out" from every
-                  // operation, so the page can only render the schema.
-                  supportedSubmitMethods: [],
-                });
-              </script>
-            </body>
-          </html>
-          HTML
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: '${{ steps.deployment.outputs.page_url }}'
+        steps:
+            -
+                name: Deploy to GitHub Pages
+                id: deployment
+                uses: actions/deploy-pages@v4
