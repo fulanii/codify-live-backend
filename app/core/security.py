@@ -8,13 +8,12 @@ import jwt
 from app.core import settings
 
 
-def create_access_token(user_id: UUID, expires_delta: timedelta | None = None) -> str:
+def create_access_token(user_id: UUID) -> str:
     """
     Create a signed JWT access token for a user.
 
     Args:
         user_id: The user this token authenticates. Stored in the `sub` claim.
-        expires_delta: How long the token stays valid. Defaults to 15 minutes.
 
     Returns:
         The encoded JWT.
@@ -22,7 +21,7 @@ def create_access_token(user_id: UUID, expires_delta: timedelta | None = None) -
 
     secret = settings.SECRET_KEY.get_secret_value()
 
-    expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=15))
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     payload = {
         "sub": str(user_id),
@@ -31,7 +30,7 @@ def create_access_token(user_id: UUID, expires_delta: timedelta | None = None) -
         "type": "access",
     }
 
-    encoded_jwt = jwt.encode(payload, settings=secret, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(payload, secret, algorithm=settings.ALGORITHM)
 
     return encoded_jwt
 
@@ -60,3 +59,28 @@ def create_refresh_token() -> dict[str, str]:
     refresh = {"raw": raw, "stored": stored}
 
     return refresh
+
+
+def set_refresh_cookie(response, raw_refresh: str):
+    """Attach the refresh token to `response` as httpOnly cookie."""
+
+    response.set_cookie(
+        key="refresh",
+        value=str(raw_refresh),
+        max_age=settings.refresh_token_max_age,
+        httponly=True,
+        secure=settings.PRODUCTION,
+        samesite="Lax",
+        path="/auth",
+        domain=settings.COOKIE_DOMAIN if settings.PRODUCTION else None,
+    )
+
+
+def delete_refresh_cookie(response) -> None:
+    """Clear the refresh cookie, path/domain MUST match `set_refresh_cookie`."""
+
+    response.delete_cookie(
+        key="refresh",
+        path="/auth",
+        domain=settings.COOKIE_DOMAIN if settings.PRODUCTION else None,
+    )
