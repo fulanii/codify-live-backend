@@ -29,7 +29,11 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
         403: {"description": "Account is unverified or deactivated"},
     },
 )
-async def login(login_data: UserLoginRequest, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
+async def login(
+    login_data: UserLoginRequest,
+    response: Response,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
     """
     TODO: Add loggging, rate limitting and tests
 

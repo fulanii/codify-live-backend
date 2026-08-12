@@ -12,7 +12,11 @@ from app.db import get_db
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, summary="Delete user refresh cookie")
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete user refresh cookie",
+)
 async def logout(request: Request, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
     """
     TODO: Add loggging, rate limitting and tests

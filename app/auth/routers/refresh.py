@@ -19,8 +19,13 @@ from app.db import get_db
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/refresh", summary="Get new access token", response_model=NewAccessToken, status_code=status.HTTP_200_OK)
-async def post(request: Request, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
+@router.post(
+    "/refresh",
+    summary="Get new access token",
+    response_model=NewAccessToken,
+    status_code=status.HTTP_200_OK,
+)
+async def refresh_access_token(request: Request, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
     """
     TODO: Add loggging, rate limitting and tests
 
