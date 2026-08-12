@@ -47,6 +47,7 @@ jobs:
                     PRODUCTION: 'false'
                     GOOGLE_CLIENT_ID: placeholder
                     GOOGLE_CLIENT_SECRET: placeholder
+                    ORIGINS: placeholder
                 run: |
                     mkdir -p _site
                     python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > _site/openapi.json
