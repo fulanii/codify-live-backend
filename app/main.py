@@ -3,7 +3,8 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.auth.routers import login_router
+from app.auth.routers import login_router, logout_router, me_router, refresh_router
+from app.core import settings
 
 logger = logging.getLogger("uvicorn")  # __name__
 
@@ -19,19 +20,15 @@ app = FastAPI(
     },
 )
 
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://codifylive.com",
-    "https://www.codifylive.com",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(login_router)
+app.include_router(logout_router)
+app.include_router(refresh_router)
+app.include_router(me_router)

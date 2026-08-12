@@ -13,6 +13,7 @@ env:
   PRODUCTION: "False"
   GOOGLE_CLIENT_ID: test-client-id
   GOOGLE_CLIENT_SECRET: test-client-secret
+  ORIGINS: placeholder
 
 
 jobs:

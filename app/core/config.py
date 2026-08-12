@@ -12,10 +12,15 @@ class Settings(BaseSettings):
     google_client_secret: SecretStr
     PRODUCTION: bool
     COOKIE_DOMAIN: str | None = None
+    ORIGINS: str
 
     @property
     def refresh_token_max_age(self) -> int:
         return self.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+
+    @property
+    def origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.ORIGINS.split(",") if origin.strip()]
 
     class Config:
         env_file = ".env"
