@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlencode
 from uuid import UUID
 
 import jwt
@@ -82,3 +83,17 @@ def delete_refresh_cookie(response) -> None:
         key="refresh",
         path="/auth",
     )
+
+
+def build_authorize_url() -> str:
+    """Google consent-screen URL for the authorization-code flow."""
+
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": settings.GOOGLE_SCOPES,
+        "access_type": "online",
+        "prompt": "select_account",
+    }
+    return f"{settings.GOOGLE_AUTHORIZE_URL}?{urlencode(params)}"
