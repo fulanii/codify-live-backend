@@ -85,7 +85,7 @@ def delete_refresh_cookie(response) -> None:
     )
 
 
-def build_authorize_url() -> str:
+def build_authorize_url(state: str) -> str:
     """Google consent-screen URL for the authorization-code flow."""
 
     params = {
@@ -95,5 +95,7 @@ def build_authorize_url() -> str:
         "scope": settings.GOOGLE_SCOPES,
         "access_type": "online",
         "prompt": "select_account",
+        "state": state,
     }
+
     return f"{settings.GOOGLE_AUTHORIZE_URL}?{urlencode(params)}"

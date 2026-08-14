@@ -1,13 +1,15 @@
-from fastapi import APIRouter, status
-from fastapi.responses import RedirectResponse
+import secrets
 
-from app.core import build_authorize_url
+from fastapi import APIRouter, status
+from fastapi.responses import RedirectResponse, Response
+
+from app.core import build_authorize_url, settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.get("/login/google", summary="Get redirect url for google login")
-async def login_google():
+async def login_google(response: Response):
     """
     TODO: Add loggging, rate limitting and tests
 
@@ -72,4 +74,17 @@ async def login_google():
         the matching user, and issues the normal session — access token plus
         httpOnly refresh cookie.
     """
-    return RedirectResponse(url=build_authorize_url(), status_code=status.HTTP_302_FOUND)
+
+    state = secrets.token_urlsafe(32)
+
+    response.set_cookie(
+        key="state",
+        value=state,
+        max_age=600,
+        httponly=True,
+        secure=settings.PRODUCTION,
+        samesite="Lax",
+        path="/auth",
+    )
+
+    return RedirectResponse(url=build_authorize_url(state=state), status_code=status.HTTP_302_FOUND)
