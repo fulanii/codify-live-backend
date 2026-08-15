@@ -19,8 +19,6 @@ async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> UserModel:
     """
-    TODO: Add loggging, rate limitting and tests
-
     Resolve the bearer access token into the user it authenticates.
 
     Args:
@@ -83,5 +81,41 @@ async def get_current_user(
             detail="Could not validate credentials.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    return user
+
+
+async def get_or_create_google_user(email: str, name: str, db):
+    """
+    Find the user behind a verified Google identity, creating them on first login.
+
+    Google sign-in doubles as registration: there is no separate signup step, so
+    the first time an email arrives it becomes an account. Matching is by email,
+    which is safe only because the caller has already verified the `id_token`
+    and checked `email_verified` — an unverified address would let someone claim
+    an account that is not theirs.
+
+    New users are created with `is_verified=True` (Google has already proven the
+    address) and no password. `password_hash` stays null until they choose to set
+    one, and `verify_password` returns False for those users, so a null hash can
+    never be logged into.
+
+    Args:
+        email: Verified email address from the Google `id_token`.
+        name: Display name from the same token.
+        db: Database session.
+
+    Returns:
+        The existing or newly created user.
+    """
+
+    query = select(UserModel).where(UserModel.email == email)
+    row = await db.execute(query)
+    user = row.scalar_one_or_none()
+
+    # new user
+    if user is None:
+        user = db.add(UserModel(name=name, email=email, is_verified=True))
+        await db.commit()
 
     return user

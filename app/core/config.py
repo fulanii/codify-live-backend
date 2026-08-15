@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     GOOGLE_AUTHORIZE_URL: str
     GOOGLE_TOKEN_URL: str
     GOOGLE_SCOPES: str
+    FRONTEND_URL: str
 
     @property
     def refresh_token_max_age(self) -> int:
