@@ -14,7 +14,11 @@ env:
   GOOGLE_CLIENT_ID: test-client-id
   GOOGLE_CLIENT_SECRET: test-client-secret
   ORIGINS: placeholder
-
+  GOOGLE_REDIRECT_URI: placeholder
+  GOOGLE_AUTHORIZE_URL: placeholder
+  GOOGLE_TOKEN_URL: placeholder
+  GOOGLE_SCOPES: placeholder
+  FRONTEND_URL: placeholder
 
 jobs:
   lint-and-test:

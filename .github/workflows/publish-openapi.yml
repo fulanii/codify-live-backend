@@ -48,6 +48,11 @@ jobs:
                     GOOGLE_CLIENT_ID: placeholder
                     GOOGLE_CLIENT_SECRET: placeholder
                     ORIGINS: placeholder
+                    GOOGLE_REDIRECT_URI: placeholder
+                    GOOGLE_AUTHORIZE_URL: placeholder
+                    GOOGLE_TOKEN_URL: placeholder
+                    GOOGLE_SCOPES: placeholder
+                    FRONTEND_URL: placeholder
                 run: |
                     mkdir -p _site
                     python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > _site/openapi.json
