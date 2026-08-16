@@ -115,7 +115,9 @@ async def get_or_create_google_user(email: str, name: str, db):
 
     # new user
     if user is None:
-        user = db.add(UserModel(name=name, email=email, is_verified=True))
+        user = UserModel(name=name, email=email, is_verified=True)
+        db.add(user)
         await db.commit()
+        await db.refresh(user)
 
     return user
