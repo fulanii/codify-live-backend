@@ -55,3 +55,5 @@ PyJWT==2.13.0
 passlib==1.7.4
 bcrypt==5.0.0
 psycopg2-binary==2.9.12
+google-auth==2.56.3
+requests==2.34.2
