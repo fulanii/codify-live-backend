@@ -8,6 +8,7 @@ from app.auth.routers import (
     logout_router,
     me_router,
     refresh_router,
+    set_passowrd_router,
 )
 from app.core import settings
 
@@ -37,3 +38,4 @@ app.include_router(refresh_router)
 app.include_router(me_router)
 app.include_router(google_login_router)
 app.include_router(google_callback_router)
+app.include_router(set_passowrd_router)
