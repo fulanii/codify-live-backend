@@ -148,4 +148,6 @@ async def google_callback(
     # refresh in http only cookie
     set_refresh_cookie(redirect, refresh_token["raw"])
 
+    logger.info(f"Google login succesful user id: {user_data.id}")
+
     return redirect
