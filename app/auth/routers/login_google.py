@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.get("/login/google", summary="Get redirect url for google login")
 async def login_google():
     """
-    TODO: Add loggging, rate limitting and tests
+    TODO: Add rate limitting and tests
 
     Start the Google sign-in flow by redirecting to Google's consent screen.
 

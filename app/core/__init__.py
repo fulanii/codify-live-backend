@@ -1,4 +1,5 @@
 from .config import settings  # noqa: F401
+from .logging import logger  # noqa: F401
 from .security import (  # noqa: F401
     build_authorize_url,
     create_access_token,

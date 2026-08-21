@@ -10,6 +10,7 @@ from app.auth.models import RefreshTokenModel
 from app.core import (
     create_refresh_token,
     exchange_google_auth_for_token,
+    logger,
     set_refresh_cookie,
     settings,
 )
@@ -105,6 +106,7 @@ async def google_callback(
     """
 
     if error or not code or not state:
+        logger.error("User google loging error.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Google login error.",
