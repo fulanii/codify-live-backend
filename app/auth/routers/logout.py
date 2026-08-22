@@ -19,7 +19,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 async def logout(request: Request, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
     """
-    TODO: Add loggging, rate limitting and tests
+    TODO: Add rate limitting and tests
 
     Log the current session out.
 

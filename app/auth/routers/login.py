@@ -11,6 +11,7 @@ from app.auth.schemas import UserLoginRequest, UserLoginResponse
 from app.core import (
     create_access_token,
     create_refresh_token,
+    logger,
     set_refresh_cookie,
     settings,
 )
@@ -35,7 +36,7 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
-    TODO: Add loggging, rate limitting and tests
+    TODO: Add rate limitting and tests
 
     Authenticate a user with email and password.
 
@@ -151,6 +152,7 @@ async def login(
     user_data = user.scalar_one_or_none()
 
     if user_data is None:
+        logger.info("Non existing user tried to login")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials.",
@@ -159,6 +161,7 @@ async def login(
 
     # check password before leaking whether the account exists
     if not user_data.verify_password(password):
+        logger.info(f"User login password verification failed user id: {user_data.id}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials.",
@@ -167,12 +170,14 @@ async def login(
 
     # make sure user is verified and active
     if not user_data.is_verified:
+        logger.info(f"User login account not verified user id: {user_data.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account is not verified, please verify your email first.",
         )
 
     if not user_data.is_active:
+        logger.info(f"User login account not active user id: {user_data.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account has been deactivated.",
@@ -204,5 +209,7 @@ async def login(
         "auth_provider": user_data.auth_provider,
         "access_token": access_token,
     }
+
+    logger.info(f"User login successful user id: {user_data.id}")
 
     return res_data

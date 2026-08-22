@@ -1,3 +1,4 @@
+import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
@@ -10,6 +11,7 @@ from app.auth.models import RefreshTokenModel
 from app.core import (
     create_refresh_token,
     exchange_google_auth_for_token,
+    logger,
     set_refresh_cookie,
     settings,
 )
@@ -21,9 +23,10 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.get("/google/callback", summary="Get redirect url for google login")
 async def google_callback(
     db: Annotated[AsyncSession, Depends(get_db)],
-    state: str | None = Cookie(None),
-    code: str | None = Query(None),
+    state_cookie: str | None = Cookie(None, alias="state"),
     error: str | None = Query(None),
+    code: str | None = Query(None),
+    state: str | None = Query(None),
 ):
     """
     TODO: Add loggging, rate limitting and tests
@@ -105,6 +108,14 @@ async def google_callback(
     """
 
     if error or not code or not state:
+        logger.error("User google loging error.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google login error.",
+        )
+
+    if not secrets.compare_digest(state, state_cookie):
+        logger.error("User google loging error.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Google login error.",
@@ -145,5 +156,7 @@ async def google_callback(
 
     # refresh in http only cookie
     set_refresh_cookie(redirect, refresh_token["raw"])
+
+    logger.info(f"Google login succesful user id: {user_data.id}")
 
     return redirect

@@ -11,6 +11,7 @@ from app.auth.schemas import NewAccessToken
 from app.core import (
     create_access_token,
     create_refresh_token,
+    logger,
     set_refresh_cookie,
     settings,
 )
@@ -118,7 +119,7 @@ async def refresh_access_token(request: Request, response: Response, db: Annotat
             detail="Invalid or expired session.",
         )
 
-    # hash it so we can search it (only has is stored)
+    # hash it so we can search it (only hash is stored)
     refresh_hash = hashlib.sha256(refresh_cookie.encode()).hexdigest()
 
     # build query, execute and grab result
@@ -143,6 +144,8 @@ async def refresh_access_token(request: Request, response: Response, db: Annotat
             refresh_token.is_revoked = True
 
         await db.commit()
+
+        logger.info("Revoked refresh token presented, revoking eveything.")
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -174,5 +177,7 @@ async def refresh_access_token(request: Request, response: Response, db: Annotat
     set_refresh_cookie(response, refresh_token["raw"])
 
     res_data = {"access_token": access_token}
+
+    logger.info("Successfully refreshed user access and issued new refresh.")
 
     return res_data

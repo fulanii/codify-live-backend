@@ -17,7 +17,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 async def me(current_user: Annotated[UserModel, Depends(get_current_user)]):
     """
-    TODO: Add loggging, rate limitting and tests
+    TODO: Add rate limitting and tests
 
     Return the profile of the user the access token belongs to.
 
