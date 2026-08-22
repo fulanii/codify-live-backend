@@ -28,7 +28,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 async def refresh_access_token(request: Request, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
     """
-    TODO: Add loggging, rate limitting and tests
+    TODO: Add, rate limitting and tests
 
     Exchange the refresh cookie for a new access token, rotating the refresh token.
 

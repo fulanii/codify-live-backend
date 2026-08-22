@@ -119,7 +119,7 @@ async def set_password(
 
     password = data.password.get_secret_value()
 
-    # has and user's password
+    # hash and set user's password
     current_user.set_password(plaintext_password=password)
 
     # update auth provider
@@ -129,4 +129,5 @@ async def set_password(
     await db.commit()
 
     logger.info(f"User succesfully set password user id: {current_user.id}")
+
     return
