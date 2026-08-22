@@ -57,3 +57,4 @@ bcrypt==5.0.0
 psycopg2-binary==2.9.12
 google-auth==2.56.3
 requests==2.34.2
+slowapi==0.1.10
