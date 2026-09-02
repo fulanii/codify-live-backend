@@ -66,6 +66,7 @@ async def logout(request: Request, response: Response, db: Annotated[AsyncSessio
         cryptographically valid until it expires, which is why the access token
         lifetime is kept short.
     """
+
     delete_refresh_cookie(response)
 
     refresh_cookie = request.cookies.get("refresh")

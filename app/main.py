@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.auth.routers import (
     google_callback_router,
@@ -10,7 +12,7 @@ from app.auth.routers import (
     refresh_router,
     set_passowrd_router,
 )
-from app.core import settings
+from app.core import limiter, settings
 
 app = FastAPI(
     title="CodifyLive",
@@ -23,6 +25,10 @@ app = FastAPI(
         "email": "yassine@yassinecodes.dev",
     },
 )
+
+app.state.limiter = limiter
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
