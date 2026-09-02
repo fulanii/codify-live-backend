@@ -8,7 +8,13 @@ from sqlalchemy.orm import undefer
 
 from app.auth.models import RefreshTokenModel, UserModel
 from app.auth.schemas import UserLoginRequest, UserLoginResponse
-from app.core import create_access_token, create_refresh_token, logger, set_refresh_cookie, settings
+from app.core import (
+    create_access_token,
+    create_refresh_token,
+    logger,
+    set_refresh_cookie,
+    settings,
+)
 from app.db import get_db
 
 router = APIRouter(prefix="/auth", tags=["Auth"])

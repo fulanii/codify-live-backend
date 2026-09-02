@@ -12,7 +12,11 @@ from app.db import get_db
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/set-password", summary="Set a password on the current account", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/set-password",
+    summary="Set a password on the current account",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def set_password(
     data: SetUserPassword,
     current_user: Annotated[UserModel, Depends(get_current_user)],
