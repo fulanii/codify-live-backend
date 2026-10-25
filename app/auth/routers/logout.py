@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import RefreshTokenModel
-from app.core import delete_refresh_cookie
+from app.core import delete_refresh_cookie, logger
 from app.db import get_db
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 async def logout(request: Request, response: Response, db: Annotated[AsyncSession, Depends(get_db)]):
     """
-    TODO: Add rate limitting and tests
+    TODO: Add rate limitting
 
     Log the current session out.
 
@@ -86,5 +86,7 @@ async def logout(request: Request, response: Response, db: Annotated[AsyncSessio
     refresh_data.is_revoked = True
 
     await db.commit()
+
+    logger.info(f"User: {refresh_data.user_id} logout successful")
 
     return
