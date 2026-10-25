@@ -36,7 +36,7 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
-    TODO: Add rate limitting and tests
+    TODO: Add rate limitting
 
     Authenticate a user with email and password.
 

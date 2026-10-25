@@ -29,7 +29,7 @@ async def google_callback(
     state: str | None = Query(None),
 ):
     """
-    TODO: Add loggging, rate limitting and tests
+    TODO: Add rate limitting
 
     Finish the Google sign-in flow and hand the browser back to the frontend.
 

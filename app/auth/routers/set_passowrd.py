@@ -23,7 +23,7 @@ async def set_password(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
-    TODO: Add rate limitting and tests
+    TODO: Add rate limitting
 
     Set a password on the signed-in account.
 
