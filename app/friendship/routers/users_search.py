@@ -106,7 +106,7 @@ async def search_users(
 
     query = (
         select(UserModel.id, UserModel.username)
-        .where(UserModel.username.ilike(f"{q}%"))
+        .where(UserModel.username.ilike(f"{q}%"), UserModel.id != current_user.id, UserModel.is_active)
         .order_by(UserModel.username.asc())
         .limit(10)
     )
