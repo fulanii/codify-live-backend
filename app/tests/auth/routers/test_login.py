@@ -13,6 +13,7 @@ class TestLogin:
 
         assert response.json() == {
             "id": str(user_password.id),
+            "username": user_password.username,
             "name": user_password.name,
             "email": user_password.email,
             "is_verified": user_password.is_verified,

@@ -45,6 +45,7 @@ async def me(current_user: Annotated[UserModel, Depends(get_current_user)]):
     ```json
     {
         "id": "0f8fad5b-d9cb-469f-a165-70867728950e",
+        "username": null,
         "name": "Yassine",
         "email": "yassine@yassinecodes.dev",
         "is_verified": true,

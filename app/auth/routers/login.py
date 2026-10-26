@@ -202,6 +202,7 @@ async def login(
     # access in res model
     res_data = {
         "id": user_data.id,
+        "username": user_data.username,
         "name": user_data.name,
         "email": user_data.email,
         "is_verified": user_data.is_verified,
