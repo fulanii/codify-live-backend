@@ -13,7 +13,10 @@ router = APIRouter(prefix="/users", tags=["Friendship"])
 
 
 @router.get(
-    "/search", summary="Search users by username", status_code=status.HTTP_200_OK, response_model=UsersSearchResponse
+    "/search",
+    summary="Search users by username",
+    status_code=status.HTTP_200_OK,
+    response_model=list[UsersSearchResponse],
 )
 async def search_users(
     current_user: Annotated[UserModel, Depends(get_current_user)],
