@@ -45,7 +45,7 @@ async def set_password(
     | Field              | Type   | Required | Validation                                      |
     |--------------------|--------|----------|--------------------------------------------------|
     | `password`         | string | Yes      | 8–32 characters; at least one uppercase, one lowercase,
-    one number, and one of `@$!%*?&` |
+    one number, and one of `@$!%*?&-` |
     | `confirm_password` | string | Yes      | 8–32 characters; must equal `password`           |
 
     Both fields are `SecretStr`, so neither is echoed back in an error response.

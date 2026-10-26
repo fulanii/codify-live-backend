@@ -19,8 +19,8 @@ class SetUserPassword(BaseModel):
             raise ValueError("Password must contain at least one lowercase letter.")
         if not re.search(r"[0-9]", password_raw):
             raise ValueError("Password must contain at least one number.")
-        if not re.search(r"[@$!%*?&]", password_raw):
-            raise ValueError("Password must contain at least one special character (@$!%*?&).")
+        if not re.search(r"[@$!%*?&-]", password_raw):
+            raise ValueError("Password must contain at least one special character (@$!%*?&-).")
 
         return value
 
