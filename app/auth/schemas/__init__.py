@@ -1,4 +1,5 @@
 from .login import UserLoginRequest, UserLoginResponse  # noqa: F401
 from .set_password import SetUserPassword  # noqa: F401
+from .set_username import SetUserUsername  # noqa: F401
 from .token import NewAccessToken  # noqa: F401
 from .user import UserResponse  # noqa: F401

@@ -24,6 +24,8 @@ async def user_friend_requests(
     current_user: Annotated[UserModel, Depends(get_current_user)], db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """
+    TODO: filter by status, and paginate once the list can grow, add tests and rate limiting
+
     List every friend request involving the signed-in user.
 
     **Endpoint:** GET `/friend-request`
@@ -95,10 +97,6 @@ async def user_friend_requests(
 
     Ordered by `created_at` descending, so the response is stable instead of
     whatever order the planner happens to produce.
-
-    \f
-
-    TODO: filter by status, and paginate once the list can grow
     """
 
     sender = aliased(UserModel)

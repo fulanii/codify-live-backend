@@ -30,6 +30,8 @@ async def send_friend_request(
     receiver_id: Annotated[uuid.UUID, Query()],
 ):
     """
+    TODO: Add logging, rate limitting and tests
+
     Send a friend request to another user.
 
     **Endpoint:** POST `/friend-request`
@@ -142,13 +144,6 @@ async def send_friend_request(
         status are ignored, so a declined request does not block a new one.
     6. The row is inserted with `status` defaulting to `pending` and committed.
         Postgres generates the id, which is returned to the caller.
-
-    \f
-
-    TODO: Add logging, rate limitting and tests
-
-    fake test uuid: 6b8eea9f-9ddb-4988-803b-c2c482efcab6 (naim)
-    real test uuid: 3175e1f9-bddd-47a4-ad3e-8708d20fa2eb (vaporNimbus14)
     """
     sender_id = current_user.id
 

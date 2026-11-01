@@ -24,4 +24,7 @@ async def update_friend_status(
     request_id: uuid.UUID,
     current_user: Annotated[UserModel, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-): ...
+):
+    """
+    #TODO: finish
+    """

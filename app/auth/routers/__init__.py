@@ -5,3 +5,4 @@ from .logout import router as logout_router  # noqa: F401
 from .me import router as me_router  # noqa: F401
 from .refresh import router as refresh_router  # noqa: F401
 from .set_passowrd import router as set_passowrd_router  # noqa: F401
+from .set_username import router as set_username_router  # noqa: F401
