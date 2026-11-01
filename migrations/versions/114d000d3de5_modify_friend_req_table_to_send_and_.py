@@ -96,7 +96,6 @@ def downgrade() -> None:
         op.f("uq_friendship_request"),
         "friendship_request",
         ["user1_id", "user2_id"],
-        postgresql_nulls_not_distinct=False,
     )
     op.create_index(op.f("ix_friendship_request_user2_id"), "friendship_request", ["user2_id"], unique=False)
     op.create_index(op.f("ix_friendship_request_user1_id"), "friendship_request", ["user1_id"], unique=False)

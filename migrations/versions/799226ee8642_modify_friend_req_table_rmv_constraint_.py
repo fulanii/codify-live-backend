@@ -39,6 +39,5 @@ def downgrade() -> None:
         op.f("uq_friendship_request"),
         "friendship_request",
         ["sender_id", "receiver_id"],
-        postgresql_nulls_not_distinct=False,
     )
     # ### end Alembic commands ###
