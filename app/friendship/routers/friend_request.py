@@ -2,22 +2,23 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.auth.models import UserModel
 from app.db import get_db
 from app.friendship.models import FriendShipModel, FriendShipRequestModel
-from app.friendship.models.friend_request import Status
+from app.friendship.schemas import FriendRequestCreateResponse
 
-router = APIRouter(prefix="/friend", tags=["Friendship"])
+router = APIRouter()
 
 
 @router.post(
-    "/request",
+    "",
     summary="Send a friend request",
     status_code=status.HTTP_201_CREATED,
+    response_model=FriendRequestCreateResponse,
     responses={
         400: {"description": "Receiver is yourself, or no active user has that id"},
         409: {"description": "Already friends, or a request is already pending"},
@@ -31,7 +32,7 @@ async def send_friend_request(
     """
     Send a friend request to another user.
 
-    **Endpoint:** POST `/friend/request`
+    **Endpoint:** POST `/friend-request`
 
     **Authentication:** `Authorization: Bearer <access_token>` required. The sender
     is always the account the token identifies, so the request cannot be used to
@@ -149,8 +150,10 @@ async def send_friend_request(
     fake test uuid: 6b8eea9f-9ddb-4988-803b-c2c482efcab6 (naim)
     real test uuid: 3175e1f9-bddd-47a4-ad3e-8708d20fa2eb (vaporNimbus14)
     """
+    sender_id = current_user.id
 
-    if receiver_id == current_user.id:
+    # user cant send friend req to themself
+    if receiver_id == sender_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to create friendship request.",
@@ -167,8 +170,8 @@ async def send_friend_request(
             detail="Unable to create friendship request.",
         )
 
-    # the check constraint on both tables requires the lower id first
-    first_id, second_id = sorted([current_user.id, receiver_id])
+    # friendship check
+    first_id, second_id = sorted([sender_id, receiver_id])
 
     already_friends = await db.scalar(
         select(
@@ -188,9 +191,14 @@ async def send_friend_request(
         select(
             select(FriendShipRequestModel.id)
             .where(
-                FriendShipRequestModel.user1_id == first_id,
-                FriendShipRequestModel.user2_id == second_id,
-                FriendShipRequestModel.status == Status.PENDING,
+                or_(
+                    and_(
+                        FriendShipRequestModel.sender_id == sender_id, FriendShipRequestModel.receiver_id == receiver_id
+                    ),
+                    and_(
+                        FriendShipRequestModel.sender_id == receiver_id, FriendShipRequestModel.receiver_id == sender_id
+                    ),
+                )
             )
             .exists()
         )
@@ -202,7 +210,7 @@ async def send_friend_request(
             detail="A friend request is already pending between you and this user.",
         )
 
-    friend_request = FriendShipRequestModel(user1_id=first_id, user2_id=second_id)
+    friend_request = FriendShipRequestModel(sender_id=sender_id, receiver_id=receiver_id)
     db.add(friend_request)
     await db.commit()
 
