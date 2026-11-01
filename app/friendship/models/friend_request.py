@@ -2,7 +2,7 @@ import datetime
 import uuid
 from enum import StrEnum
 
-from sqlalchemy import DateTime, ForeignKey, String, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,14 +23,19 @@ class FriendShipRequestModel(Base):
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
 
-    sender_id: Mapped[uuid.UUID] = mapped_column(
+    user1_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
 
-    receiver_id: Mapped[uuid.UUID] = mapped_column(
+    user2_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
 
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     status: Mapped[str] = mapped_column(String(20), default=Status.PENDING, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(user1_id < user2_id, name="check_user1_id_less_than_user2_id"),
+        UniqueConstraint(user1_id, user2_id, name="uq_friendship_request"),
+    )
