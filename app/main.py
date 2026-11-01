@@ -11,7 +11,7 @@ from app.auth.routers import (
     set_passowrd_router,
 )
 from app.core import settings
-from app.friendship.routers import search_users_router
+from app.friendship.routers import friend_request_router, search_users_router
 
 app = FastAPI(
     title="CodifyLive",
@@ -42,3 +42,4 @@ app.include_router(google_login_router)
 app.include_router(google_callback_router)
 app.include_router(set_passowrd_router)
 app.include_router(search_users_router)
+app.include_router(friend_request_router)

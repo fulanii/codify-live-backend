@@ -24,7 +24,7 @@ async def search_users(
     q: Annotated[str, Query(min_length=2, max_length=30)],
 ):
     """
-    TODO: Add rate limitting and tests
+    TODO: Add rate limitting
 
     Search users by username prefix, for finding someone to add as a friend.
 
