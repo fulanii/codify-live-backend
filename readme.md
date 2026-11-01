@@ -11,7 +11,7 @@ This repository is the FastAPI backend that powers it.
 
 ## Why this project exists
 
-It is a working product, but the reason it is built the way it is: I wanted to write the parts most
+It is a working product, but the reason it is built the way it is: I wanted to write by hand without **AI** the parts most
 tutorials skip. Session security that survives a stolen cookie, real-time delivery that still works
 when you run more than one server, and running untrusted code without handing over the machine.
 

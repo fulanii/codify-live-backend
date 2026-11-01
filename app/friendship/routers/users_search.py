@@ -9,7 +9,7 @@ from app.auth.models import UserModel
 from app.db import get_db
 from app.friendship.schemas import UsersSearchResponse
 
-router = APIRouter(prefix="/users", tags=["Friendship"])
+router = APIRouter()
 
 
 @router.get(
