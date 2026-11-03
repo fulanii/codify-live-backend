@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user
 from app.auth.models import UserModel
 from app.db import get_db
-from app.friendship.models import FriendShipModel, FriendShipRequestModel
+from app.friendship.models import FriendShipModel, FriendShipRequestModel, Status
 from app.friendship.schemas import FriendRequestCreateResponse
 
 router = APIRouter()
@@ -193,7 +193,8 @@ async def send_friend_request(
                     and_(
                         FriendShipRequestModel.sender_id == receiver_id, FriendShipRequestModel.receiver_id == sender_id
                     ),
-                )
+                ),
+                FriendShipRequestModel.status == Status.PENDING,
             )
             .exists()
         )
