@@ -13,8 +13,8 @@ class FriendRequestCreateResponse(BaseModel):
 class FriendRequestResponse(BaseModel):
     id: uuid.UUID
     sender_id: uuid.UUID
-    sender_username: str
+    sender_username: str | None
     receiver_id: uuid.UUID
-    receiver_username: str
+    receiver_username: str | None
     status: Status
     created_at: datetime.datetime

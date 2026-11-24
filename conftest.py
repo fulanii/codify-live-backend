@@ -152,3 +152,65 @@ async def refresh_token(base_user, db_session):
     await db_session.refresh(refresh_token_data)
 
     return refresh_token_data
+
+
+@pytest.fixture
+async def other_users(db_session):
+    """
+    Three verified, active users with usernames, to be the other side of a
+    friendship or a search hit.
+    """
+
+    from app.auth.models import UserModel
+
+    users = [
+        UserModel(username="prismOrbit32", name="Ada", email="ada@codifylive.test", is_verified=True),
+        UserModel(username="vaporNimbus14", name="Linus", email="linus@codifylive.test", is_verified=True),
+        UserModel(username="quartzEmber77", name="Grace", email="grace@codifylive.test", is_verified=True),
+    ]
+
+    db_session.add_all(users)
+    await db_session.commit()
+
+    for user in users:
+        await db_session.refresh(user)
+
+    return users
+
+
+@pytest.fixture
+async def incoming_friend_requests(db_session, base_user, other_users):
+    """
+    One pending request from each of `other_users` to `base_user`.
+
+    `base_user` is the receiver in all three, so these are the rows accept and
+    decline are allowed to act on. Cancel is the sender's, so it needs the
+    mirror of this.
+    """
+
+    from app.friendship.models import FriendShipRequestModel
+
+    requests = [FriendShipRequestModel(sender_id=user.id, receiver_id=base_user.id) for user in other_users]
+
+    db_session.add_all(requests)
+    await db_session.commit()
+
+    for friend_request in requests:
+        await db_session.refresh(friend_request)
+
+    return requests
+
+
+@pytest.fixture
+async def friendships(db_session, base_user, other_users):
+    from app.friendship.models import FriendShipModel
+
+    rows = [
+        FriendShipModel(**dict(zip(("user1_id", "user2_id"), sorted([user.id, base_user.id]), strict=True)))
+        for user in other_users
+    ]
+
+    db_session.add_all(rows)
+    await db_session.commit()
+
+    return rows
