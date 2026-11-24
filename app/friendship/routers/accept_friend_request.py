@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.auth.models import UserModel
+from app.core import logger
 from app.db import get_db
 from app.friendship.models import FriendShipModel, FriendShipRequestModel, Status
 from app.friendship.schemas import FriendStatusUpdate
@@ -30,7 +31,7 @@ async def accept_friend_request(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
-    TODO: Add logging, tests and rate limiting
+    TODO: Add rate limiting
 
     Accept a pending friend request addressed to you.
 
@@ -159,6 +160,7 @@ async def accept_friend_request(
     friend_request = await db.get(FriendShipRequestModel, request_id)
 
     if friend_request is None:
+        logger.info(f"Friend request accept unknown request id: {request_id} user id: {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Friend request not found.",
@@ -166,12 +168,16 @@ async def accept_friend_request(
 
     # dont let a non receiver learn the request exists
     if friend_request.receiver_id != current_user.id:
+        logger.info(f"Friend request accept by non receiver_id request id: {request_id} user id: {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Friend request not found.",
         )
 
     if friend_request.status != Status.PENDING:
+        logger.info(
+            f"Friend request accept already {friend_request.status} request id: {request_id} user id: {current_user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This request has already been answered.",
@@ -191,10 +197,13 @@ async def accept_friend_request(
         await db.commit()
     except IntegrityError:
         await db.rollback()
+        logger.warning(f"Friendship already exists on accept request id: {request_id}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="You are already friends with this user.",
         ) from None
+
+    logger.info(f"Friend request accepted request id: {request_id} user id: {current_user.id}")
 
     # return new row with updated staus
     return friend_request

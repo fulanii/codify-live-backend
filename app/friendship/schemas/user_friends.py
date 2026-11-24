@@ -15,5 +15,5 @@ class UserFriendsResponse(BaseModel):
 
     id: uuid.UUID
     friend_id: uuid.UUID
-    friend_username: str
+    friend_username: str | None
     friends_since: datetime.datetime

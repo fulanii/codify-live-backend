@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.auth.models import UserModel
+from app.core import logger
 from app.db import get_db
 from app.friendship.models import FriendShipModel, FriendShipRequestModel, Status
 from app.friendship.schemas import FriendRequestCreateResponse
@@ -30,7 +31,7 @@ async def send_friend_request(
     receiver_id: Annotated[uuid.UUID, Query()],
 ):
     """
-    TODO: Add logging, rate limitting and tests
+    TODO: Add logging, rate limitting
 
     Send a friend request to another user.
 
@@ -149,6 +150,7 @@ async def send_friend_request(
 
     # user cant send friend req to themself
     if receiver_id == sender_id:
+        logger.info(f"Friend request to self user id: {sender_id}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to create friendship request.",
@@ -160,6 +162,7 @@ async def send_friend_request(
 
     # dont let user know user with id doesn't exist
     if not receiver_exists:
+        logger.info(f"Friend request to unknown or inactive receiver id: {receiver_id} user id: {sender_id}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to create friendship request.",
@@ -177,6 +180,7 @@ async def send_friend_request(
     )
 
     if already_friends:
+        logger.info(f"Friend request when already friends receiver id: {receiver_id} user id: {sender_id}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="You are already friends with this user.",
@@ -201,6 +205,7 @@ async def send_friend_request(
     )
 
     if request_exists:
+        logger.info(f"Duplicate friend request receiver id: {receiver_id} user id: {sender_id}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A friend request is already pending between you and this user.",
@@ -209,5 +214,7 @@ async def send_friend_request(
     friend_request = FriendShipRequestModel(sender_id=sender_id, receiver_id=receiver_id)
     db.add(friend_request)
     await db.commit()
+
+    logger.info(f"Friend request sent id: {friend_request.id} receiver id: {receiver_id} user id: {sender_id}")
 
     return {"id": friend_request.id}

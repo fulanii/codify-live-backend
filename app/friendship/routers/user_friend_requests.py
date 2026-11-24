@@ -24,7 +24,7 @@ async def user_friend_requests(
     current_user: Annotated[UserModel, Depends(get_current_user)], db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """
-    TODO: filter by status, and paginate once the list can grow, add tests and rate limiting
+    TODO: filter by status, and paginate once the list can grow, add rate limiting
 
     List every friend request involving the signed-in user.
 
